@@ -1,0 +1,340 @@
+# 顶层 name/value 供 Halo 初始化默认 ConfigMap；props 交给宿主 FormKit 渲染。
+apiVersion: v1alpha1
+kind: Setting
+metadata:
+  name: simnook-settings
+spec:
+  forms:
+    - group: general
+      label: 展示设置 / Display
+      formSchema:
+        - $cmp: simnook-setting-field
+          name: sitename
+          value: SIMnook
+          props:
+            inputType: text
+            name: sitename
+            label: 卡片墙标题
+            value: SIMnook
+            validation: length:0,100
+            english:
+              label: Card wall title
+        - $cmp: simnook-setting-field
+          name: defaultLanguage
+          value: auto
+          props:
+            inputType: select
+            name: defaultLanguage
+            label: 默认语言
+            value: auto
+            options:
+              - label: 跟随浏览器
+                value: auto
+              - label: 简体中文
+                value: zh-CN
+              - label: English
+                value: en
+            english:
+              label: Default language
+              options:
+                auto: Follow browser
+                zh-CN: 简体中文
+                en: English
+        - $cmp: simnook-setting-field
+          name: defaultCardStyle
+          value: namecard
+          props:
+            inputType: select
+            name: defaultCardStyle
+            label: 默认卡片样式
+            value: namecard
+            options:
+              - label: 名片
+                value: namecard
+              - label: 表盘
+                value: dial
+              - label: 横条
+                value: bar
+            english:
+              label: Default card style
+              options:
+                namecard: Namecard
+                dial: Dial
+                bar: Bar
+        - $cmp: simnook-setting-field
+          name: defaultSort
+          value: renewal
+          props:
+            inputType: select
+            name: defaultSort
+            label: 默认排序
+            value: renewal
+            options:
+              - label: 按下次续费日期
+                value: renewal
+              - label: 按号卡的展示排序
+                value: order
+              - label: 按名称
+                value: name
+              - label: 按国家或地区
+                value: country
+            english:
+              label: Default sorting
+              options:
+                renewal: Next renewal date
+                order: Display order
+                name: Name
+                country: Country or region
+        - $cmp: simnook-setting-field
+          name: earthViewMode
+          value: earth
+          props:
+            inputType: select
+            name: earthViewMode
+            label: 地图模式
+            value: earth
+            options:
+              - label: 旋转地球
+                value: earth
+              - label: 静止地球
+                value: earth-stop
+              - label: 平面地图
+                value: maps
+              - label: 卡片
+                value: cards
+              - label: 隐藏
+                value: hide
+            english:
+              label: Map mode
+              options:
+                earth: Rotating globe
+                earth-stop: Static globe
+                maps: Flat map
+                cards: Cards
+                hide: Hidden
+        - $cmp: simnook-setting-field
+          name: cancelledLast
+          value: true
+          props:
+            inputType: checkbox
+            name: cancelledLast
+            label: 将已注销号卡排在最后
+            value: true
+            english:
+              label: Place cancelled cards last
+        - $cmp: simnook-setting-field
+          name: disablePageAnimation
+          value: false
+          props:
+            inputType: checkbox
+            name: disablePageAnimation
+            label: 减少页面过渡动画
+            value: false
+            english:
+              label: Reduce page transitions
+        - $cmp: simnook-setting-field
+          name: hideAdminEntryWhenLoggedOut
+          value: false
+          props:
+            inputType: checkbox
+            name: hideAdminEntryWhenLoggedOut
+            label: 对未登录访客隐藏后台入口
+            value: false
+            english:
+              label: Hide the admin entry from visitors who are not signed in
+        - $cmp: simnook-setting-field
+          name: visitorInfoCardEnabled
+          value: true
+          props:
+            inputType: checkbox
+            name: visitorInfoCardEnabled
+            label: 显示访客信息卡片
+            value: true
+            help: 开启后，访客浏览器会请求第三方 IP 地理位置服务，用于显示访问来源和地图连线。
+            english:
+              label: Show the visitor information card
+              help: When enabled, the visitor browser requests third-party IP geolocation services to show its location and map connection lines.
+    - group: announcement
+      label: 公告 / Announcement
+      formSchema:
+        - $cmp: simnook-setting-field
+          name: alertEnabled
+          value: false
+          props:
+            inputType: checkbox
+            name: alertEnabled
+            label: 显示首页公告
+            value: false
+            english:
+              label: Show the homepage announcement
+        - $cmp: simnook-setting-field
+          name: alertTitle
+          props:
+            inputType: text
+            name: alertTitle
+            label: 公告标题
+            validation: length:0,100
+            english:
+              label: Announcement title
+        - $cmp: simnook-setting-field
+          name: alertContent
+          props:
+            inputType: textarea
+            name: alertContent
+            label: 公告内容
+            rows: 5
+            validation: length:0,10000
+            help: 支持常用 Markdown，如粗体、链接和图片。内容会公开显示。
+            english:
+              label: Announcement content
+              help: Supports common Markdown, such as bold text, links, and images. The content is public.
+    - group: background
+      label: 背景 / Background
+      formSchema:
+        - $cmp: simnook-setting-field
+          name: backgroundEnabled
+          value: false
+          props:
+            inputType: checkbox
+            name: backgroundEnabled
+            label: 启用自定义背景
+            value: false
+            english:
+              label: Enable a custom background
+        - $cmp: simnook-setting-field
+          name: backgroundType
+          value: image
+          props:
+            inputType: select
+            name: backgroundType
+            label: 背景类型
+            value: image
+            options:
+              - label: 图片
+                value: image
+              - label: 视频
+                value: video
+            english:
+              label: Background type
+              options:
+                image: Image
+                video: Video
+        - $cmp: simnook-setting-field
+          name: lightBackgroundUrl
+          props:
+            inputType: attachment
+            name: lightBackgroundUrl
+            label: 浅色背景
+            accepts:
+              - image/*
+              - video/*
+            help: 请选择与背景类型一致的附件，也可输入链接。
+            english:
+              label: Light-mode background
+              help: Choose an attachment matching the background type, or enter a URL.
+        - $cmp: simnook-setting-field
+          name: darkBackgroundUrl
+          props:
+            inputType: attachment
+            name: darkBackgroundUrl
+            label: 深色背景
+            accepts:
+              - image/*
+              - video/*
+            help: 留空时深色模式使用默认背景。
+            english:
+              label: Dark-mode background
+              help: Leave empty to use the default dark-mode background.
+        - $cmp: simnook-setting-field
+          name: backgroundBlur
+          value: 0
+          props:
+            inputType: number
+            name: backgroundBlur
+            label: 模糊半径（像素）
+            value: 0
+            min: 0
+            max: 100
+            step: 1
+            validation: min:0|max:100
+            english:
+              label: Blur radius (pixels)
+        - $cmp: simnook-setting-field
+          name: backgroundOverlay
+          value: 0
+          props:
+            inputType: number
+            name: backgroundOverlay
+            label: 背景遮罩强度
+            value: 0
+            min: -100
+            max: 100
+            step: 1
+            validation: min:-100|max:100
+            help: 正值加深背景，负值降低背景不透明度，0 表示关闭遮罩。
+            english:
+              label: Background overlay
+              help: Positive values darken the background, negative values reduce its opacity, and 0 disables the overlay.
+    - group: filing
+      label: 页脚备案 / Filing
+      formSchema:
+        - $cmp: simnook-setting-field
+          name: icpEnabled
+          value: false
+          props:
+            inputType: checkbox
+            name: icpEnabled
+            label: 显示 ICP 备案号
+            value: false
+            english:
+              label: Show the ICP registration number
+        - $cmp: simnook-setting-field
+          name: icpNumber
+          props:
+            inputType: text
+            name: icpNumber
+            label: ICP 备案号
+            validation: length:0,100
+            english:
+              label: ICP registration number
+        - $cmp: simnook-setting-field
+          name: icpUrl
+          value: https://beian.miit.gov.cn/
+          props:
+            inputType: url
+            name: icpUrl
+            label: ICP 备案链接
+            value: https://beian.miit.gov.cn/
+            validation: url
+            english:
+              label: ICP registration link
+        - $cmp: simnook-setting-field
+          name: policeEnabled
+          value: false
+          props:
+            inputType: checkbox
+            name: policeEnabled
+            label: 显示公安备案号
+            value: false
+            english:
+              label: Show the public-security registration number
+        - $cmp: simnook-setting-field
+          name: policeNumber
+          props:
+            inputType: text
+            name: policeNumber
+            label: 公安备案号
+            validation: length:0,100
+            english:
+              label: Public-security registration number
+        - $cmp: simnook-setting-field
+          name: policeUrl
+          props:
+            inputType: url
+            name: policeUrl
+            label: 公安备案链接
+            validation: url
+            help: 留空时仅显示文字。
+            english:
+              label: Public-security registration link
+              help: Leave empty to show the number as plain text.

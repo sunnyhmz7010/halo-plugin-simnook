@@ -1,0 +1,16 @@
+apiVersion: plugin.halo.run/v1alpha1
+kind: Plugin
+metadata:
+  name: simnook
+spec:
+  enabled: true
+  requires: ">=2.27.2"
+  author:
+    name: Sunny
+  displayName: "SIMnook"
+  logo: frontend/${frontendIcon}
+  description: "号卡与消费记录管理，公开脱敏卡片墙"
+  settingName: simnook-settings
+  configMapName: simnook-config
+  license:
+    - name: GPL-3.0

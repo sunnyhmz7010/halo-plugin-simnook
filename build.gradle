@@ -1,0 +1,133 @@
+plugins {
+    id 'java'
+    id "com.diffplug.spotless" version "8.10.2"
+    id "io.freefair.lombok" version "9.2.0"
+    id "run.halo.plugin.devtools" version "0.9.0"
+}
+
+group 'run.halo.simnook'
+version = '0.3.0-beta'
+
+tasks.named('jar') {
+    from('LICENSE') { into 'META-INF' }
+    from('frontend/LICENSE') { into 'META-INF'; rename { 'LICENSE-SIMerald.txt' } }
+    from('THIRD_PARTY_NOTICES.md') { into 'META-INF' }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation platform('run.halo.tools.platform:plugin:2.27.2')
+    compileOnly 'run.halo.app:api'
+
+    testImplementation 'run.halo.app:api'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release = 21
+}
+
+tasks.named('generatePluginComponentsIdx') {
+    notCompatibleWithConfigurationCache('This task invokes "Task.project" at execution time, which is not supported with configuration cache.')
+}
+
+halo {
+    version = '2.27.2'
+}
+
+spotless {
+    java {
+        palantirJavaFormat("2.90.0").formatJavadoc(true)
+    }
+}
+
+tasks.register('processUiResources', Sync) {
+    from project(':ui').layout.buildDirectory.dir('dist')
+    into layout.buildDirectory.dir('resources/main/ui')
+    dependsOn project(':ui').tasks.named('assemble')
+    shouldRunAfter tasks.named('processResources')
+}
+
+tasks.named('classes') {
+    dependsOn tasks.named('processUiResources')
+    dependsOn 'processFrontendResources'
+}
+
+tasks.register('frontendInstall', Exec) {
+    workingDir 'frontend'
+    commandLine System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm', 'ci'
+    inputs.files('frontend/package.json', 'frontend/package-lock.json')
+    outputs.dir('frontend/node_modules')
+}
+tasks.register('frontendBuild', Exec) {
+    dependsOn 'frontendInstall'
+    workingDir 'frontend'
+    commandLine System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm', 'run', 'build'
+    inputs.files(fileTree('frontend') { exclude 'node_modules/**', 'dist/**' })
+    outputs.dir('frontend/dist')
+}
+tasks.register('processFrontendResources', Sync) {
+    dependsOn 'frontendBuild'
+    from 'frontend/dist'
+    exclude '.vite/**'
+    into layout.buildDirectory.dir('resources/main/frontend')
+    shouldRunAfter 'processResources'
+}
+
+// 模板、Logo 和异步分块共用 Vite 生成的内容指纹资源。
+def frontendManifest = layout.projectDirectory.file('frontend/dist/.vite/manifest.json')
+tasks.named('processResources') {
+    dependsOn 'frontendBuild'
+    inputs.file(frontendManifest)
+    filesMatching(['templates/simnook.html', 'plugin.yaml']) {
+        def manifest = new groovy.json.JsonSlurper().parse(frontendManifest.asFile)
+        expand(frontendScript: manifest['index.html'].file, frontendStyle: manifest['style.css'].file,
+                frontendIcon: manifest['src/assets/simnook.svg'].file)
+    }
+}
+
+haloPlugin {
+    openApi {
+        useExistingServer = true
+        apiDocsUrl = 'http://127.0.0.1:18090'
+        groupingRules {
+            simnookApis {
+                displayName = 'SIMnook API'
+                pathsToMatch = ['/apis/simnook.halo.run/v1alpha1/**']
+            }
+        }
+        groupedApiMappings = ['/v3/api-docs/simnookApis': 'simnook.json']
+        generator { outputDir = file("${projectDir}/ui/src/api/generated") }
+    }
+}
+
+// Windows 绝对路径必须使用 URI，否则 OpenAPI 解析器会把盘符当作协议。
+tasks.matching { it.name == 'generateApiClient' }.configureEach {
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        actions.clear()
+        doLast {
+            def config = new org.openapitools.codegen.config.CodegenConfigurator()
+            config.setInputSpec(specDir.file('simnook.json').get().asFile.toURI().toString())
+            config.setOutputDir(outputDir.get().asFile.absolutePath)
+            config.setGeneratorName(generatorName.get())
+            config.setAdditionalProperties(additionalProperties.get())
+            config.setTypeMappings(typeMappings.get())
+            new org.openapitools.codegen.DefaultGenerator().opts(config.toClientOptInput()).generate()
+        }
+    }
+}

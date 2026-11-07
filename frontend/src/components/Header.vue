@@ -1,0 +1,84 @@
+<script setup lang="ts">
+import { Icon } from '@iconify/vue'
+import { computed, inject, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import siteFavicon from '@/assets/simnook.svg?no-inline'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { DataTooltip } from '@/components/ui/data-tooltip'
+import { useAppStore } from '@/stores/app'
+
+const router = useRouter()
+const { t } = useI18n()
+const appStore = useAppStore()
+
+const isScrolled = inject<ReturnType<typeof ref<boolean>>>('isScrolled', ref(false))
+
+const actionButtons = computed(() => {
+  const buttons = [
+    {
+      title: t(`header.theme.${appStore.themeMode}`),
+      icon: appStore.themeMode === 'auto' ? 'icon-park-outline:dark-mode' : appStore.themeMode === 'light' ? 'icon-park-outline:sun-one' : 'icon-park-outline:moon',
+      action: 'toggleTheme',
+    },
+    {
+      // Names the language the button switches to, in that language
+      title: t('header.switchLanguage'),
+      icon: 'tabler:language',
+      action: 'toggleLanguage',
+    },
+  ]
+
+  if (appStore.isLoggedIn || !appStore.hideAdminEntryWhenLoggedOut) {
+    buttons.push({
+      title: t('header.admin'),
+      icon: 'icon-park-outline:setting',
+      action: 'jumpToSetting',
+    })
+  }
+  return buttons
+})
+
+function handleButtonClick(action: string) {
+  switch (action) {
+    case 'toggleTheme':
+      appStore.updateThemeMode()
+      break
+    case 'toggleLanguage':
+      appStore.locale = appStore.locale === 'zh-CN' ? 'en' : 'zh-CN'
+      break
+    case 'jumpToSetting':
+      window.location.assign('/console/simnook')
+      break
+  }
+}
+
+const sitename = computed(() => appStore.sitename)
+</script>
+
+<template>
+  <div
+    class="transition-all duration-200 top-0 sticky z-10 border-b border-transparent"
+    :class="isScrolled ? 'backdrop-blur-xl' : 'bg-transparent'"
+  >
+    <div class="px-4 flex-between h-14 max-w-[1280px] mx-auto">
+      <div class="flex items-center gap-3 cursor-pointer" @click="router.push('/')">
+        <Avatar class="size-8">
+          <AvatarImage :src="siteFavicon" :alt="sitename" />
+          <AvatarFallback>{{ sitename.slice(0, 1) }}</AvatarFallback>
+        </Avatar>
+        <h3 class="m-0 text-lg font-semibold">
+          {{ sitename }}
+        </h3>
+      </div>
+      <div class="flex items-center gap-2">
+        <DataTooltip v-for="button in actionButtons" :key="button.action" :content="button.title" placement="left" content-class="whitespace-nowrap text-[11px] px-2">
+          <Button variant="ghost" size="icon-sm" :aria-label="button.title" @click="handleButtonClick(button.action)">
+            <Icon :icon="button.icon" :width="18" :height="18" />
+          </Button>
+        </DataTooltip>
+      </div>
+    </div>
+  </div>
+</template>
