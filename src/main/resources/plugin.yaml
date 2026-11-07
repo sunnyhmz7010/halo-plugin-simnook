@@ -7,6 +7,10 @@ spec:
   requires: ">=2.27.2"
   author:
     name: Sunny
+    website: https://github.com/sunnyhmz7010
+  homepage: https://github.com/sunnyhmz7010/halo-plugin-simnook
+  repo: https://github.com/sunnyhmz7010/halo-plugin-simnook
+  issues: https://github.com/sunnyhmz7010/halo-plugin-simnook/issues
   displayName: "SIMnook"
   logo: frontend/${frontendIcon}
   description: "号卡与消费记录管理，公开脱敏卡片墙"
@@ -14,3 +18,4 @@ spec:
   configMapName: simnook-config
   license:
     - name: GPL-3.0
+      url: https://github.com/sunnyhmz7010/halo-plugin-simnook/blob/main/LICENSE

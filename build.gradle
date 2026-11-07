@@ -6,12 +6,10 @@ plugins {
 }
 
 group 'run.halo.simnook'
-version = '0.3.0-beta'
 
 tasks.named('jar') {
     from('LICENSE') { into 'META-INF' }
     from('frontend/LICENSE') { into 'META-INF'; rename { 'LICENSE-SIMerald.txt' } }
-    from('THIRD_PARTY_NOTICES.md') { into 'META-INF' }
 }
 
 repositories {
@@ -77,8 +75,10 @@ tasks.register('frontendInstall', Exec) {
 tasks.register('frontendBuild', Exec) {
     dependsOn 'frontendInstall'
     workingDir 'frontend'
+    environment 'SIMNOOK_BUILD_VERSION', project.version.toString()
     commandLine System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm', 'run', 'build'
     inputs.files(fileTree('frontend') { exclude 'node_modules/**', 'dist/**' })
+    inputs.property('pluginVersion', project.version.toString())
     outputs.dir('frontend/dist')
 }
 tasks.register('processFrontendResources', Sync) {
