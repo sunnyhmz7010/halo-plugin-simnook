@@ -9,16 +9,10 @@ jobs:
   cd:
     uses: halo-sigs/reusable-workflows/.github/workflows/plugin-cd.yaml@v5
     secrets:
-      # https://github.com/halo-sigs/reusable-workflows#githubworkflowsplugin-cdyaml
       halo-pat: ${{ secrets.HALO_RUN_PAT }}
     permissions:
       contents: write
     with:
       ui-path: "ui"
-      pnpm-version: 10
-      node-version: 24
-      java-version: 21
-      # 首次审核通过后，配置应用 ID、令牌并将 HALO_APPSTORE_PUBLISH 设置为 true。
-      skip-appstore-release: ${{ vars.HALO_APPSTORE_PUBLISH != 'true' }}
-      app-id: ${{ vars.HALO_APP_ID }}
-      sync-github-readme: false
+      app-id: app-klfhbdga
+      sync-github-readme: true
