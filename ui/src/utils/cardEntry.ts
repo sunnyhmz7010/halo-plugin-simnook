@@ -46,7 +46,6 @@ export function copyCardConfiguration(source: CardSpec): CardSpec {
     cycleLabel: source.cycleLabel,
     price: source.price,
     currency: source.currency,
-    paymentAccountIds: source.paymentAccountIds,
     records: [],
   }))
 }
@@ -61,15 +60,13 @@ export function localDay(): string {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-')
 }
 
-export function newExpense(card: CardSpec, accountIds: string[], today = localDay()): ExpenseRecord {
+export function newExpense(card: CardSpec, today = localDay()): ExpenseRecord {
   const type = card.records?.length ? '续费/保号' : '首次购买/开卡'
-  const defaults = card.paymentAccountIds?.filter(id => accountIds.includes(id)) ?? []
   return {
     type,
     date: today,
     currency: card.currency,
     title: [cardName(card.carrier, card.number) || card.name, type, today].filter(Boolean).join(' · '),
-    paymentAccountIds: defaults.length === 1 ? defaults : [],
   }
 }
 

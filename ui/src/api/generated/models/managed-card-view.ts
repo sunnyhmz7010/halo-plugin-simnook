@@ -187,12 +187,6 @@ export interface ManagedCardView {
     'order'?: number;
     /**
      * 
-     * @type {Array<string>}
-     * @memberof ManagedCardView
-     */
-    'paymentAccounts'?: Array<string>;
-    /**
-     * 
      * @type {string}
      * @memberof ManagedCardView
      */

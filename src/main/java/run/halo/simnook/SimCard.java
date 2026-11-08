@@ -76,9 +76,6 @@ public class SimCard extends AbstractExtension {
 
         private String device;
         private String account;
-        // 旧版填写的账户名称继续可读，新的关联使用 Halo 资源名。
-        private List<String> paymentAccounts;
-        private List<String> paymentAccountIds;
         private List<String> services;
         private String dataCheck;
 
@@ -109,7 +106,5 @@ public class SimCard extends AbstractExtension {
         private String extendsTo;
 
         private String title;
-        private String account;
-        private List<String> paymentAccountIds;
     }
 }

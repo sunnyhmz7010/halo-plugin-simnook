@@ -235,7 +235,6 @@ const en: MessageSchema = {
       balanceUpdatedAt: 'Balance updated',
       held: 'Held for',
       account: 'Account login',
-      paymentAccounts: 'Payment accounts',
       services: 'Linked services',
       dataCheck: 'Data check',
     },
@@ -259,7 +258,6 @@ const en: MessageSchema = {
       amount: 'Amount',
       amountCNY: 'CNY equivalent',
       extendsTo: 'Extended to',
-      accounts: 'Payment accounts',
     },
   },
 
@@ -447,14 +445,11 @@ const en: MessageSchema = {
       failed: 'Auto-detect failed',
       cardsFallback: 'SIM Cards',
       noRecords: '(Expense Records not found)',
-      accountsFallback: 'Payment Accounts',
     },
     databases: {
       cards: 'SIM Cards database',
       records: 'Expense Records database',
-      accounts: 'Payment Accounts database (optional)',
       help: 'Database link or ID',
-      accountsHelp: 'Used to display payment account names',
       optional: 'Optional',
     },
     preset: 'Field preset',
@@ -630,7 +625,6 @@ const en: MessageSchema = {
     sync: {
       noToken: 'Notion token is not configured yet',
       noDatabases: 'SIM Cards and Expense Records database IDs are not set yet',
-      accountsSkipped: 'Skipped the Payment Accounts database (account names will not be shown): {cause}',
       failed: 'Sync failed: {message}',
     },
   },

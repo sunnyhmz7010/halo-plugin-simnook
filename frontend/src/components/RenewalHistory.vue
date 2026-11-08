@@ -8,7 +8,7 @@ import { CardX } from '@/components/ui/card-x'
 import { Empty } from '@/components/ui/empty'
 import { useBackgroundSurface } from '@/composables/useBackgroundSurface'
 import { useAppStore } from '@/stores/app'
-import { formatAmount, formatCNY, joinList, recordKindLabel } from '@/utils/cardHelpers'
+import { formatAmount, formatCNY, recordKindLabel } from '@/utils/cardHelpers'
 import '@/utils/echarts'
 
 /**
@@ -44,7 +44,6 @@ const TYPE_COLORS: Record<RecordKind, string> = {
 
 const records = computed<SimRecord[]>(() => [...props.card.history].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')))
 const chartRecords = computed(() => [...records.value].filter(r => r.date).reverse())
-const showAccounts = computed(() => records.value.some(r => r.accounts && r.accounts.length > 0))
 
 function recordAmountText(record: SimRecord): string {
   if (record.amount === null)
@@ -154,9 +153,6 @@ const chartOption = computed(() => ({
               <th class="font-normal py-1.5 pr-3">
                 {{ t('history.columns.extendsTo') }}
               </th>
-              <th v-if="showAccounts" class="font-normal py-1.5">
-                {{ t('history.columns.accounts') }}
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -178,9 +174,6 @@ const chartOption = computed(() => ({
               </td>
               <td class="py-1.5 pr-3 whitespace-nowrap">
                 {{ record.extendsTo ?? '-' }}
-              </td>
-              <td v-if="showAccounts" class="py-1.5 whitespace-nowrap text-muted-foreground">
-                {{ joinList(record.accounts ?? []) || '-' }}
               </td>
             </tr>
           </tbody>

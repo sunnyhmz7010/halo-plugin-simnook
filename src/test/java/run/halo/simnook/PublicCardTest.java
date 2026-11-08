@@ -31,8 +31,8 @@ class PublicCardTest {
         expense.setTitle("手填标题保持原样");
         c.getSpec().setRecords(List.of(expense));
         var today = LocalDate.of(2026, 11, 7);
-        var en = ManagementEndpoint.managedCard(c, Map.of(), today, 0, Locale.ENGLISH);
-        var zh = ManagementEndpoint.managedCard(c, Map.of(), today, 0);
+        var en = ManagementEndpoint.managedCard(c, today, 0, Locale.ENGLISH);
+        var zh = ManagementEndpoint.managedCard(c, today, 0);
         assertThat(en.path("statusLabel").asString()).isEqualTo("Active");
         assertThat(en.path("type").asString()).isEqualTo("Physical SIM");
         assertThat(en.path("dataCheck").asString()).contains("Phone number is missing", "我的手写备注");
@@ -40,7 +40,7 @@ class PublicCardTest {
         assertThat(en.path("history").get(0).path("title").asString()).isEqualTo("手填标题保持原样");
         assertThat(PublicCard.from(c, today).toString()).doesNotContain("我的手写备注", "手填标题保持原样", "private-");
         c.getSpec().setTypeLabel("我的自定义卡型");
-        assertThat(ManagementEndpoint.managedCard(c, Map.of(), today, 0, Locale.ENGLISH)
+        assertThat(ManagementEndpoint.managedCard(c, today, 0, Locale.ENGLISH)
                         .path("type")
                         .asString())
                 .isEqualTo("我的自定义卡型");
@@ -70,7 +70,6 @@ class PublicCardTest {
         r.setDate("2026-10-01");
         r.setExtendsTo(end);
         r.setTitle("private-title");
-        r.setAccount("private-payment");
         return r;
     }
 
@@ -146,33 +145,31 @@ class PublicCardTest {
     }
 
     @Test
-    void recordsChecksAndLinkedAccountsOnlyInManagedView() {
+    void recordsChecksOnlyInManagedViewWithoutPaymentFields() {
         var c = card();
         c.getSpec().setTypeKind("embedded");
         c.getSpec().setCountryName("美国");
-        c.getSpec().setPaymentAccountIds(List.of("bank", "wallet"));
         var paid = record("6.25", "2", null);
         paid.setCurrency("CNY");
         paid.setType("额外充值");
         paid.setId("stable-record");
-        paid.setPaymentAccountIds(List.of("wallet"));
         var incomplete = new SimCard.ExpenseRecord();
         incomplete.setCurrency("JPY");
         incomplete.setAmount(BigDecimal.TEN);
         c.getSpec().setRecords(List.of(paid, incomplete));
         var today = LocalDate.of(2026, 11, 6);
         var publicCard = PublicCard.from(c, today);
-        var managed = ManagementEndpoint.managedCard(c, Map.of("bank", "银行", "wallet", "钱包"), today, 0);
+        var managed = ManagementEndpoint.managedCard(c, today, 0);
         assertThat(publicCard.totalSpentCNY()).isEqualByComparingTo("6.25");
         assertThat(publicCard.history().get(0).id()).isEqualTo("test-card-stable-record");
         assertThat(publicCard.history().get(1).amountCNY()).isNull();
-        assertThat(publicCard.toString()).doesNotContain("private-", "钱包");
-        assertThat(managed.path("paymentAccounts").get(1).asString()).isEqualTo("钱包");
-        assertThat(managed.path("history").get(0).path("accounts").get(0).asString())
-                .isEqualTo("钱包");
-        assertThat(managed.path("history").get(0).path("accounts").get(1).asString())
-                .isEqualTo("private-payment");
-        assertThat(managed.path("history").get(1).path("checks").toString()).contains("缺消费日期", "外币缺汇率", "付了钱但缺扣款账户");
+        assertThat(publicCard.toString()).doesNotContain("private-");
+        assertThat(managed.has("paymentAccounts")).isFalse();
+        assertThat(managed.path("history").get(0).has("accounts")).isFalse();
+        assertThat(managed.path("history").get(1).path("checks").toString())
+                .contains("缺消费日期", "外币缺汇率")
+                .doesNotContain("扣款账户");
+        assertThat(managed.path("checks").toString()).doesNotContain("扣款账户");
         assertThat(managed.path("dataCheck").asString()).contains("号码与号码国家不符（应以 +1 开头）");
     }
 
@@ -205,7 +202,7 @@ class PublicCardTest {
         assertThat(dto.expiresAt()).isEqualTo("2026-12-01");
         assertThat(dto.status()).isEqualTo("active");
         assertThat(dto.history().getFirst().extendsTo()).isNull();
-        var managed = ManagementEndpoint.managedCard(c, Map.of(), today, 0);
+        var managed = ManagementEndpoint.managedCard(c, today, 0);
         assertThat(managed.path("dataCheck").asString()).contains("旧版手填有效期不是有效日期", "停用日期不是有效日期");
         assertThat(managed.path("history").get(0).path("checks").toString()).contains("本次有效期延至不是有效日期");
     }

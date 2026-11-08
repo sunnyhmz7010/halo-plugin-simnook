@@ -7,7 +7,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -52,19 +51,12 @@ public class BackupService {
         this.settings = settings;
     }
 
-    record Snapshot(Map<String, SimCard> cards, Map<String, PaymentAccount> accounts) {}
+    record Snapshot(Map<String, SimCard> cards) {}
 
     Mono<Snapshot> snapshot() {
-        return Mono.zip(
-                client.list(SimCard.class, null, PublicCard.SOURCE_ORDER)
-                        .collectMap(card -> card.getMetadata().getName()),
-                client.list(
-                                PaymentAccount.class,
-                                null,
-                                Comparator.comparing(
-                                        account -> account.getMetadata().getName()))
-                        .collectMap(account -> account.getMetadata().getName()),
-                Snapshot::new);
+        return client.list(SimCard.class, null, PublicCard.SOURCE_ORDER)
+                .collectMap(card -> card.getMetadata().getName())
+                .map(Snapshot::new);
     }
 
     Mono<BackupDocument> export() {
@@ -78,13 +70,6 @@ public class BackupService {
                                 .filter(BackupService::active)
                                 .sorted(PublicCard.SOURCE_ORDER)
                                 .map(card -> new CardEntry(card.getMetadata().getName(), card.getSpec()))
-                                .toList(),
-                        snapshot.accounts().values().stream()
-                                .filter(BackupService::active)
-                                .sorted(Comparator.comparing(
-                                        account -> account.getMetadata().getName()))
-                                .map(account ->
-                                        new AccountEntry(account.getMetadata().getName(), account.getSpec()))
                                 .toList()));
     }
 
@@ -102,14 +87,8 @@ public class BackupService {
         if (document == null
                 || !"simnook-backup".equals(document.format())
                 || document.version() != 1
-                || document.cards() == null
-                || document.paymentAccounts() == null) throw bad("不支持的备份格式或版本");
+                || document.cards() == null) throw bad("不支持的备份格式或版本");
         var names = new HashSet<String>();
-        for (var entry : document.paymentAccounts()) {
-            if (entry == null || entry.spec() == null) throw bad("支付账户缺少业务字段");
-            validateName(entry.name(), entry.spec().getName(), names);
-        }
-        names.clear();
         for (var entry : document.cards()) {
             if (entry == null || entry.spec() == null) throw bad("号卡缺少业务字段");
             validateName(entry.name(), entry.spec().getName(), names);
@@ -137,28 +116,9 @@ public class BackupService {
         var document = parse(content);
         return snapshot().publishOn(Schedulers.boundedElastic()).map(snapshot -> {
             var items = new ArrayList<PreviewItem>();
-            var accounts = snapshot.accounts().values().stream()
-                    .filter(BackupService::active)
-                    .map(account -> account.getMetadata().getName())
-                    .collect(Collectors.toSet());
-            document.paymentAccounts().forEach(entry -> accounts.add(entry.name()));
-            for (var entry : document.paymentAccounts()) {
-                items.add(previewItem(
-                        "PaymentAccount",
-                        entry.name(),
-                        entry.spec().getName(),
-                        entry.spec(),
-                        snapshot.accounts().get(entry.name()),
-                        List.of(),
-                        0));
-            }
             for (var entry : document.cards()) {
                 var current = snapshot.cards().get(entry.name());
                 var warnings = new ArrayList<String>();
-                var missing = references(entry.spec()).stream()
-                        .filter(id -> !accounts.contains(id))
-                        .toList();
-                if (!missing.isEmpty()) warnings.add("缺少支付账户：" + String.join(", ", missing));
                 if (current != null && active(current)) {
                     var existing = CardFacts.records(current.getSpec()).stream()
                             .filter(row -> CardFacts.present(row.getId()))
@@ -196,10 +156,8 @@ public class BackupService {
         else if (!active(current)) {
             actions = List.of("skip");
             problems.add("此 ID 正在删除，回收完成前不能恢复");
-        } else actions = "SimCard".equals(kind) ? List.of("skip", "overwrite", "append") : List.of("skip", "overwrite");
-        Object before = current instanceof SimCard card
-                ? card.getSpec()
-                : current instanceof PaymentAccount account ? account.getSpec() : null;
+        } else actions = List.of("skip", "overwrite", "append");
+        Object before = current instanceof SimCard card ? card.getSpec() : null;
         return new PreviewItem(
                 kind, name, title, version(current), actions, differences(before, incoming), problems, appended);
     }
@@ -252,24 +210,8 @@ public class BackupService {
             if (decision == null || choices.put(decision.kind() + "/" + decision.name(), decision) != null)
                 throw bad("恢复选项重复或无效");
         }
-        if (choices.size()
-                != document.cards().size() + document.paymentAccounts().size()) throw bad("恢复选项与备份不一致");
+        if (choices.size() != document.cards().size()) throw bad("恢复选项与备份不一致");
         var result = new ArrayList<Planned>();
-        var accountNames = snapshot.accounts().values().stream()
-                .filter(BackupService::active)
-                .map(account -> account.getMetadata().getName())
-                .collect(Collectors.toSet());
-        for (var entry : document.paymentAccounts()) {
-            var current = snapshot.accounts().get(entry.name());
-            var decision = decision(choices, "PaymentAccount", entry.name(), current);
-            var resource = current == null ? new PaymentAccount() : JSON.convertValue(current, PaymentAccount.class);
-            if (!"skip".equals(decision.action())) {
-                if (current == null) resource.setMetadata(metadata(entry.name()));
-                resource.setSpec(entry.spec());
-                accountNames.add(entry.name());
-            }
-            result.add(new Planned(decision, resource));
-        }
         for (var entry : document.cards()) {
             var current = snapshot.cards().get(entry.name());
             var decision = decision(choices, "SimCard", entry.name(), current);
@@ -282,10 +224,6 @@ public class BackupService {
                                     CardFacts.records(resource.getSpec()), CardFacts.records(entry.spec())));
                 } else resource.setSpec(entry.spec());
                 if (CardFacts.records(resource.getSpec()).size() > 1000) throw bad("追加后消费记录超过 1000 条：" + entry.name());
-                var missing = references(resource.getSpec()).stream()
-                        .filter(id -> !accountNames.contains(id))
-                        .toList();
-                if (!missing.isEmpty()) throw bad("号卡 " + entry.name() + " 缺少支付账户：" + String.join(", ", missing));
             }
             result.add(new Planned(decision, resource));
         }
@@ -350,15 +288,6 @@ public class BackupService {
         return node.toString();
     }
 
-    private static Set<String> references(SimCard.CardSpec spec) {
-        var refs = new HashSet<String>();
-        if (spec.getPaymentAccountIds() != null) refs.addAll(spec.getPaymentAccountIds());
-        for (var row : CardFacts.records(spec))
-            if (row.getPaymentAccountIds() != null) refs.addAll(row.getPaymentAccountIds());
-        refs.removeIf(id -> !CardFacts.present(id));
-        return refs;
-    }
-
     Mono<String> csv(String kind) {
         if (!List.of("cards", "records").contains(kind)) throw bad("不支持的 CSV 类型");
         return export().zipWith(settings.getSettingValues().map(RenewalSettings::from))
@@ -387,8 +316,7 @@ public class BackupService {
                                     facts.renewalEnd());
                         }
                     } else {
-                        rows.append(
-                                "cardId,cardName,recordId,type,date,amount,currency,rate,extendsTo,title,paymentAccountIds\n");
+                        rows.append("cardId,cardName,recordId,type,date,amount,currency,rate,extendsTo,title\n");
                         for (var card : document.cards())
                             for (var row : CardFacts.records(card.spec())) {
                                 csvRow(
@@ -402,10 +330,7 @@ public class BackupService {
                                         row.getCurrency(),
                                         row.getRate(),
                                         row.getExtendsTo(),
-                                        row.getTitle(),
-                                        row.getPaymentAccountIds() == null
-                                                ? ""
-                                                : String.join(";", row.getPaymentAccountIds()));
+                                        row.getTitle());
                             }
                     }
                     return rows.toString();

@@ -15,9 +15,6 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { BackupAccountEntry } from './backup-account-entry';
-// May contain unused imports in some cases
-// @ts-ignore
 import type { BackupCardEntry } from './backup-card-entry';
 
 /**
@@ -44,12 +41,6 @@ export interface BackupDocument {
      * @memberof BackupDocument
      */
     'format'?: string;
-    /**
-     * 
-     * @type {Array<BackupAccountEntry>}
-     * @memberof BackupDocument
-     */
-    'paymentAccounts'?: Array<BackupAccountEntry>;
     /**
      * 
      * @type {string}

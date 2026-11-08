@@ -38,8 +38,6 @@ export interface SimRecord {
   extendsTo: string | null
   /** Returned only when authenticated: record title */
   title?: string
-  /** Returned only when authenticated: payment account names */
-  accounts?: string[]
 }
 
 export interface SimCard {
@@ -100,7 +98,6 @@ export interface SimCard {
   number?: string | null
   services?: string[]
   account?: string | null
-  paymentAccounts?: string[]
   dataCheck?: string | null
   notionUrl?: string | null
 }
@@ -146,7 +143,6 @@ export interface NotionSettingsView {
   tokenFromEnv: boolean
   cardsDb: string
   recordsDb: string
-  accountsDb: string
   mapping: string
 }
 

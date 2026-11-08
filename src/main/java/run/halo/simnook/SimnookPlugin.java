@@ -38,17 +38,11 @@ public class SimnookPlugin extends BasePlugin {
                 indexes -> indexes.add(IndexSpecs.<SimCard, Boolean>single("deleting", Boolean.class)
                         .indexFunc(card -> card.getMetadata().getDeletionTimestamp() != null)
                         .nullable(false)));
-        schemes.register(
-                PaymentAccount.class,
-                indexes -> indexes.add(IndexSpecs.<PaymentAccount, Boolean>single("deleting", Boolean.class)
-                        .indexFunc(account -> account.getMetadata().getDeletionTimestamp() != null)
-                        .nullable(false)));
     }
 
     @Override
     public void stop() {
         schemes.unregister(Scheme.buildFromType(RenewalReminder.class));
-        schemes.unregister(Scheme.buildFromType(PaymentAccount.class));
         schemes.unregister(Scheme.buildFromType(SimCard.class));
     }
 }

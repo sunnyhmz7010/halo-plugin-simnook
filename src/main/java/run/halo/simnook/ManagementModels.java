@@ -51,7 +51,6 @@ public final class ManagementModels {
         private String account;
         private String type;
         private List<String> services;
-        private List<String> paymentAccounts;
         private List<String> checks;
         private String dataCheck;
 
@@ -86,7 +85,6 @@ public final class ManagementModels {
         private BigDecimal amountCNY;
         private String extendsTo;
         private String title;
-        private List<String> accounts;
         private List<String> checks;
     }
 }

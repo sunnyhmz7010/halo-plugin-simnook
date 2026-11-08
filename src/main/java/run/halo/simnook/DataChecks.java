@@ -64,12 +64,11 @@ final class DataChecks {
             entry("MXN", new Rate("Mex$", 0.28, 0.5)), entry("BRL", new Rate("R$", 0.9, 1.8)),
             entry("AUD", new Rate("A$", 3.6, 5.6)), entry("NZD", new Rate("NZ$", 3.3, 5.3)));
 
-    static List<String> card(SimCard.CardSpec spec, PublicCard view, List<String> accounts, LocalDate today) {
-        return card(spec, view, accounts, today, Locale.SIMPLIFIED_CHINESE);
+    static List<String> card(SimCard.CardSpec spec, PublicCard view, LocalDate today) {
+        return card(spec, view, today, Locale.SIMPLIFIED_CHINESE);
     }
 
-    static List<String> card(
-            SimCard.CardSpec spec, PublicCard view, List<String> accounts, LocalDate today, Locale locale) {
+    static List<String> card(SimCard.CardSpec spec, PublicCard view, LocalDate today, Locale locale) {
         var warnings = new ArrayList<String>();
         var number = text(spec.getNumber()).replace(" ", "");
         var country = text(spec.getCountryName());
@@ -147,8 +146,6 @@ final class DataChecks {
                 warnings.add(Messages.text(locale, "checks.overrideBeforePeriod"));
             }
         }
-        if (!inactive && positive(spec.getPrice()) && accounts.isEmpty())
-            warnings.add(Messages.text(locale, "checks.paymentAccountMissing"));
         if ((spec.getPrice() == null) != !present(spec.getCurrency()))
             warnings.add(Messages.text(locale, "checks.priceCurrency"));
         var needsBalance = actions.stream()
@@ -167,17 +164,11 @@ final class DataChecks {
         return warnings;
     }
 
-    static List<String> record(
-            SimCard.ExpenseRecord record, SimCard.CardSpec card, List<String> accounts, LocalDate today) {
-        return record(record, card, accounts, today, Locale.SIMPLIFIED_CHINESE);
+    static List<String> record(SimCard.ExpenseRecord record, SimCard.CardSpec card, LocalDate today) {
+        return record(record, card, today, Locale.SIMPLIFIED_CHINESE);
     }
 
-    static List<String> record(
-            SimCard.ExpenseRecord record,
-            SimCard.CardSpec card,
-            List<String> accounts,
-            LocalDate today,
-            Locale locale) {
+    static List<String> record(SimCard.ExpenseRecord record, SimCard.CardSpec card, LocalDate today, Locale locale) {
         var warnings = new ArrayList<String>();
         var day = checkedDate(record.getDate(), Messages.text(locale, "field.recordDate"), warnings, locale);
         var type = record.getType();
@@ -231,8 +222,6 @@ final class DataChecks {
             var limit = purchase ? 1830L : cycle <= 0 ? 400L : cycle + 30L;
             if (span > limit) warnings.add(Messages.text(locale, "checks.extendsTooLong", String.valueOf(limit)));
         }
-        if (positive(record.getAmount()) && accounts.isEmpty())
-            warnings.add(Messages.text(locale, "checks.recordPaymentMissing"));
         return warnings;
     }
 

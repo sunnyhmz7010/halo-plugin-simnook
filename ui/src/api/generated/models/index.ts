@@ -1,5 +1,4 @@
 export * from './add-operation';
-export * from './backup-account-entry';
 export * from './backup-card-entry';
 export * from './backup-document';
 export * from './backup-field-difference';
@@ -19,9 +18,6 @@ export * from './managed-card-views';
 export * from './managed-record-view';
 export * from './metadata';
 export * from './move-operation';
-export * from './payment-account';
-export * from './payment-account-list';
-export * from './payment-account-spec';
 export * from './quick-renewal-request';
 export * from './reminder-subscription-update';
 export * from './reminder-subscription-view';

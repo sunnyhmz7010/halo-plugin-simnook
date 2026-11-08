@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-/** 公开字段白名单。禁止在这里序列化 CardSpec、ExpenseRecord 或支付账户。 */
+/** 公开字段白名单。禁止在这里序列化 CardSpec 或 ExpenseRecord。 */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PublicCard(
         String id,

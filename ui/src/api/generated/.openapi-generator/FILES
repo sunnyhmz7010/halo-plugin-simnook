@@ -1,7 +1,6 @@
 .gitignore
 .npmignore
 api.ts
-api/payment-account-v1alpha1-api.ts
 api/renewal-reminder-v1alpha1-api.ts
 api/sim-card-v1alpha1-api.ts
 api/simnook-management-v1alpha1-api.ts
@@ -10,7 +9,6 @@ common.ts
 configuration.ts
 index.ts
 models/add-operation.ts
-models/backup-account-entry.ts
 models/backup-card-entry.ts
 models/backup-document.ts
 models/backup-field-difference.ts
@@ -31,9 +29,6 @@ models/managed-card-views.ts
 models/managed-record-view.ts
 models/metadata.ts
 models/move-operation.ts
-models/payment-account-list.ts
-models/payment-account-spec.ts
-models/payment-account.ts
 models/quick-renewal-request.ts
 models/reminder-subscription-update.ts
 models/reminder-subscription-view.ts

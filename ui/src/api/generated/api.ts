@@ -14,7 +14,6 @@
 
 
 
-export * from './api/payment-account-v1alpha1-api';
 export * from './api/renewal-reminder-v1alpha1-api';
 export * from './api/sim-card-v1alpha1-api';
 export * from './api/simnook-management-v1alpha1-api';

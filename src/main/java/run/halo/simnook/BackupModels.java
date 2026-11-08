@@ -7,18 +7,11 @@ public final class BackupModels {
     private BackupModels() {}
 
     public record BackupDocument(
-            String format,
-            int version,
-            String exportedAt,
-            String pluginVersion,
-            List<CardEntry> cards,
-            List<AccountEntry> paymentAccounts) {}
+            String format, int version, String exportedAt, String pluginVersion, List<CardEntry> cards) {}
 
     @Schema(name = "BackupCardEntry")
     public record CardEntry(String name, SimCard.CardSpec spec) {}
 
-    @Schema(name = "BackupAccountEntry")
-    public record AccountEntry(String name, PaymentAccount.Spec spec) {}
     // 用字符串传送原始 JSON，客户端不反序列化金额与汇率。
     @Schema(name = "BackupPreviewRequest")
     public record PreviewRequest(String content) {}

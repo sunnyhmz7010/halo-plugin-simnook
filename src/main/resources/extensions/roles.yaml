@@ -11,7 +11,7 @@ metadata:
     rbac.authorization.halo.run/dependencies: '["role-template-view-attachments"]'
 rules:
   - apiGroups: ["simnook.halo.run"]
-    resources: ["simcards", "paymentaccounts"]
+    resources: ["simcards"]
     verbs: ["get", "list", "create", "update", "patch", "delete"]
   - apiGroups: ["console.api.simnook.halo.run"]
     resources: ["cardviews"]

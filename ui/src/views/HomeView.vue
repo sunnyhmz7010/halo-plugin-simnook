@@ -3,8 +3,7 @@ import { useSimnookI18n } from '../locales'
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { axiosInstance } from '@halo-dev/api-client'
 import { Dialog, Toast, VPageHeader, VCard, VButton, VEntityContainer, VEntity, VEntityField, VPagination, VLoading, VEmpty, VModal, VTabbar } from '@halo-dev/components'
-import { PaymentAccountV1alpha1Api, SimCardV1alpha1Api, SimnookManagementV1alpha1Api, type SimCard, type CardSpec, type PaymentAccount, type ManagedCardView } from '../api/generated'
-import PaymentAccountsView from './PaymentAccountsView.vue'
+import { SimCardV1alpha1Api, SimnookManagementV1alpha1Api, type SimCard, type CardSpec, type ManagedCardView } from '../api/generated'
 import ExpenseFields from './ExpenseFields.vue'
 import QuickRenewal from './QuickRenewal.vue'
 import ReminderPanel from './ReminderPanel.vue'
@@ -16,13 +15,10 @@ import { CYCLE_OPTIONS, cardName, copyCardConfiguration, cycleChoice, entryExpir
 const { t, locale, label, recordTypeLabel } = useSimnookI18n()
 
 const api = new SimCardV1alpha1Api(undefined, '', axiosInstance)
-const accountApi = new PaymentAccountV1alpha1Api(undefined, '', axiosInstance)
 const managementApi = new SimnookManagementV1alpha1Api(undefined, '', axiosInstance)
-const accountView = ref<InstanceType<typeof PaymentAccountsView>>()
 const tab = ref('cards')
-const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'todo', label: t('续费待办') }, { id: 'accounts', label: t('支付账户') }, { id: 'backup', label: t('备份恢复') }])
+const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'todo', label: t('续费待办') }, { id: 'backup', label: t('备份恢复') }])
 const cards = ref<ManagedCardView[]>([])
-const accounts = ref<PaymentAccount[]>([])
 const page = ref(1), size = ref(10)
 const keyword = ref(''), countryFilter = ref(''), statusFilter = ref(''), urgencyFilter = ref('')
 const renewing = ref<ManagedCardView>()
@@ -82,14 +78,6 @@ const countryCurrencies: Record<string, string> = {
 const withExisting = (options: string[], ...existing: (string | undefined)[]) =>
  [...new Set([...options, ...existing.filter((value): value is string => Boolean(value))])]
   .map(value => ({ value, label: options.includes(value) ? label(value) : value }))
-const accountOptions = computed(() => {
- const options = new Map(accounts.value.map(account => [account.metadata.name, account.spec.name]))
- for (const id of [...(form.value.paymentAccountIds ?? []), ...(form.value.records ?? []).flatMap(row => row.paymentAccountIds ?? [])]) {
-  if (!options.has(id)) options.set(id, `${t('未找到的账户')} · ${id}`)
- }
- return Array.from(options, ([value, label]) => ({ value, label }))
-})
-const availableAccountIds = computed(() => accounts.value.map(account => account.metadata.name))
 const logoPreview = computed(() => form.value.logo || carrierLogo(form.value.carrier))
 const builtinLogo = computed({
  get: () => builtinLogoOptions.some(option => option.value === form.value.logo) ? form.value.logo : '',
@@ -148,8 +136,6 @@ async function edit(card?: SimCard, template?: CardSpec) {
  conflict.value = false; visible.value = true
  await nextTick()
  initializing = false
- try { accounts.value = (await accountApi.listPaymentAccount({ size: 0, fieldSelector: ['deleting=false'] })).data.items }
- catch (error) { Toast.error(t('扣款账户选项加载失败')); console.error(error) }
 }
 async function reloadEditing() {
  if (!editing.value) return
@@ -234,19 +220,19 @@ watch(filteredCards, () => { page.value = Math.min(page.value, Math.max(1, Math.
 watch(locale, load)
 onMounted(load)
 function submit() { (document.getElementById('simnook-form') as HTMLFormElement | null)?.requestSubmit() }
+function openFrontend() { window.open('/simnook/', '_blank', 'noopener,noreferrer') }
 </script>
 
 <template>
  <VPageHeader title="SIMnook">
   <template #actions>
+   <VButton @click="openFrontend">{{ t('打开前台页面') }}</VButton>
    <VButton v-if="tab === 'cards' || tab === 'todo'" type="secondary" @click="edit()">{{ t('新增号卡') }}</VButton>
-   <VButton v-else-if="tab === 'accounts'" type="secondary" @click="accountView?.edit()">{{ t('新增支付账户') }}</VButton>
   </template>
  </VPageHeader>
  <div class="m-0 md:m-4">
  <VTabbar v-model:active-id="tab" :items="tabs" class="mb-4 w-full" type="outline" />
  <BackupView v-if="tab === 'backup'" @restored="load" />
- <PaymentAccountsView v-else-if="tab === 'accounts'" ref="accountView" @edit-card="edit" />
  <template v-else>
  <ReminderPanel v-if="tab === 'todo'" />
  <VCard :body-class="['!p-0']">
@@ -301,10 +287,9 @@ function submit() { (document.getElementById('simnook-form') as HTMLFormElement 
     </template>
     <FormKit name="price" type="number" :label="t('续费价格')" validation="min:0" min="0" step="0.01" />
     <FormKit name="currency" type="select" :label="t('续费币种')" :placeholder="t('选择续费币种')" :options="withExisting(currencies, form.currency)" searchable allow-create clearable validation="matches:/^[A-Z]{3}$/" :help="t('新增时按号码国家推荐币种，可以修改。')" />
-    <FormKit name="paymentAccountIds" type="select" :label="t('默认扣款账户（私有）')" :placeholder="t('选择支付账户')" :options="accountOptions" multiple searchable />
     <FormKit name="records" type="array" :label="t('消费记录')" :max="1000" :item-labels="recordLabels">
      <template #default="{ value }">
-      <ExpenseFields :record="value ?? {}" :initialize="Boolean(value)" :card="form" :account-options="accountOptions" :account-ids="availableAccountIds" :types="withExisting(recordTypes, ...(form.records ?? []).map(record => record.type)).map(option => ({ ...option, label: recordTypeLabel(option.value) }))" :currencies="withExisting(currencies, ...(form.records ?? []).map(record => record.currency))" />
+      <ExpenseFields :record="value ?? {}" :initialize="Boolean(value)" :card="form" :types="withExisting(recordTypes, ...(form.records ?? []).map(record => record.type)).map(option => ({ ...option, label: recordTypeLabel(option.value) }))" :currencies="withExisting(currencies, ...(form.records ?? []).map(record => record.currency))" />
      </template>
     </FormKit>
    </div>
@@ -323,7 +308,6 @@ function submit() { (document.getElementById('simnook-form') as HTMLFormElement 
    <FormKit name="balanceUpdatedAt" type="date" :label="t('余额更新日期（私有）')" />
    <FormKit name="device" type="select" :label="t('主要使用设备（私有）')" :placeholder="t('选择主要使用设备')" :options="withExisting(devices, form.device)" searchable allow-create clearable />
    <FormKit name="account" type="text" :label="t('账户名称（私有）')" :help="t('仅记录名称，不存储密码、密钥或令牌。')" />
-   <FormKit v-if="editing?.spec.paymentAccounts?.length" name="paymentAccounts" type="list" :label="t('旧版扣款账户名称（私有）')" item-type="string" :help="t('关联对应的支付账户后，可以清除旧名称。')" />
    <FormKit name="services" type="select" :label="t('绑定的服务（私有）')" :options="withExisting(services, ...(form.services ?? []))" multiple searchable allow-create />
    <FormKit v-if="editing?.spec.dataCheck" name="dataCheck" type="textarea" :label="t('旧版数据检查备注（私有）')" />
    <FormKit name="order" type="number" :label="t('展示排序')" step="1" />

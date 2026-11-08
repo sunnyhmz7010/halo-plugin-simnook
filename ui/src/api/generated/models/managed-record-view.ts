@@ -22,12 +22,6 @@
 export interface ManagedRecordView {
     /**
      * 
-     * @type {Array<string>}
-     * @memberof ManagedRecordView
-     */
-    'accounts'?: Array<string>;
-    /**
-     * 
      * @type {number}
      * @memberof ManagedRecordView
      */

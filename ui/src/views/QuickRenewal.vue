@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { axiosInstance } from '@halo-dev/api-client'
 import { Toast, VButton, VEmpty, VLoading, VModal } from '@halo-dev/components'
-import { PaymentAccountV1alpha1Api, SimCardV1alpha1Api, SimnookManagementV1alpha1Api, type SimCard, type ExpenseRecord } from '../api/generated'
+import { SimCardV1alpha1Api, SimnookManagementV1alpha1Api, type SimCard, type ExpenseRecord } from '../api/generated'
 import { useSimnookI18n } from '../locales'
 import { newExpense, suggestedExtension } from '../utils/cardEntry'
 import ExpenseFields from './ExpenseFields.vue'
@@ -11,24 +11,19 @@ const props = defineProps<{ name: string; today: string }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 const { t } = useSimnookI18n()
 const api = new SimCardV1alpha1Api(undefined, '', axiosInstance)
-const accountApi = new PaymentAccountV1alpha1Api(undefined, '', axiosInstance)
 const managementApi = new SimnookManagementV1alpha1Api(undefined, '', axiosInstance)
 const card = ref<SimCard>()
 const draft = ref<ExpenseRecord>()
-const accounts = ref<{ value: string; label: string }[]>([])
 const nextStart = ref(''), nextEnd = ref('')
 const loading = ref(false), saving = ref(false), conflict = ref(false), failed = ref(false)
 
 async function load() {
  loading.value = true; failed.value = false
  try {
-  const [resource, paymentAccounts] = await Promise.all([
-   api.getSimCard({ name: props.name }), accountApi.listPaymentAccount({ size: 0, fieldSelector: ['deleting=false'] }),
-  ])
+  const resource = await api.getSimCard({ name: props.name })
   card.value = resource.data
-  accounts.value = paymentAccounts.data.items.map(account => ({ value: account.metadata.name, label: account.spec.name }))
   if (!draft.value) {
-   draft.value = { ...newExpense(card.value.spec, accounts.value.map(account => account.value), props.today),
+   draft.value = { ...newExpense(card.value.spec, props.today),
     id: crypto.randomUUID(), type: '续费/保号', amount: card.value.spec.price, currency: card.value.spec.currency || 'CNY',
    }
    draft.value.title = [card.value.spec.name, t('续费/保号'), props.today].join(' · ')
@@ -68,7 +63,7 @@ function submit() { (document.getElementById('simnook-quick-renewal') as HTMLFor
     <p>{{ t('续费冲突提示') }}</p><VButton class="mt-2" @click="load">{{ t('重新加载并保留草稿') }}</VButton>
    </div>
    <FormKit id="simnook-quick-renewal" v-model="draft" type="form" :actions="false" @submit="save">
-    <ExpenseFields :record="draft" :initialize="false" required :card="card.spec" :account-options="accounts" :account-ids="accounts.map(account => account.value)"
+    <ExpenseFields :record="draft" :initialize="false" required :card="card.spec"
      :types="[{ value: '续费/保号', label: t('续费/保号') }]" :currencies="[...new Set(['CNY', 'USD', 'HKD', 'EUR', 'GBP', 'JPY', draft.currency || 'CNY'])].map(value => ({ value, label: value }))" />
     <FormKit v-model="nextStart" type="date" :ignore="true" :label="t('下次续费起始日')" :help="t('留空时跟随有效期。')" />
     <FormKit v-model="nextEnd" type="date" :ignore="true" :label="t('续费截止日')" />

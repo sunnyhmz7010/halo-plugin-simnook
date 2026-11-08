@@ -151,18 +151,6 @@ export interface CardSpec {
     'order'?: number;
     /**
      * 
-     * @type {Array<string>}
-     * @memberof CardSpec
-     */
-    'paymentAccountIds'?: Array<string>;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof CardSpec
-     */
-    'paymentAccounts'?: Array<string>;
-    /**
-     * 
      * @type {number}
      * @memberof CardSpec
      */

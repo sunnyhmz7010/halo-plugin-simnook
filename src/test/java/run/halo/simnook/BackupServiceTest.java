@@ -29,7 +29,6 @@ class BackupServiceTest {
         row.setExtendsTo("2026-12-08");
         card.getSpec().setRecords(List.of(row));
         when(client.list(eq(SimCard.class), isNull(), any())).thenReturn(Flux.just(card));
-        when(client.list(eq(PaymentAccount.class), isNull(), any())).thenReturn(Flux.empty());
         when(settings.getSettingValues()).thenReturn(Mono.just(Map.of()));
         var csv = new BackupService(client, mock(PluginContext.class), settings)
                 .csv("cards")
@@ -63,8 +62,9 @@ class BackupServiceTest {
         var card = card("card-a");
         card.getSpec().setRecords(List.of(record("r1", "12345678901234567890.123456789")));
         var document = new BackupDocument(
-                "simnook-backup", 1, "2026-11-08", "test", List.of(new CardEntry("card-a", card.getSpec())), List.of());
+                "simnook-backup", 1, "2026-11-08", "test", List.of(new CardEntry("card-a", card.getSpec())));
         var text = BackupService.JSON.writeValueAsString(document);
+        assertThat(text).doesNotContain("paymentAccounts", "paymentAccountIds");
         assertThat(BackupService.parse(text)
                         .cards()
                         .getFirst()
@@ -81,8 +81,7 @@ class BackupServiceTest {
                 1,
                 "",
                 "",
-                List.of(document.cards().getFirst(), document.cards().getFirst()),
-                List.of());
+                List.of(document.cards().getFirst(), document.cards().getFirst()));
         assertThatThrownBy(() -> BackupService.parse(BackupService.JSON.writeValueAsString(duplicate)))
                 .hasMessageContaining("重复资源");
         assertThatThrownBy(() -> BackupService.parse(" ".repeat(BackupService.MAX_BYTES) + "{}"))
@@ -104,15 +103,15 @@ class BackupServiceTest {
     }
 
     @Test
-    void preflightChecksVersionsAndSelectedAccountDependencies() {
+    void preflightChecksVersionsAndAppendsRecords() {
         var card = card("card-a");
         card.getSpec().setRecords(List.of(record("old", "1")));
         var imported = card("card-a");
         imported.getSpec().setName("备份名称");
         imported.getSpec().setRecords(List.of(record("new", "2")));
-        var document = new BackupDocument(
-                "simnook-backup", 1, "", "", List.of(new CardEntry("card-a", imported.getSpec())), List.of());
-        var snapshot = new BackupService.Snapshot(Map.of("card-a", card), Map.of());
+        var document =
+                new BackupDocument("simnook-backup", 1, "", "", List.of(new CardEntry("card-a", imported.getSpec())));
+        var snapshot = new BackupService.Snapshot(Map.of("card-a", card));
         var plan = BackupService.prepare(
                 document, List.of(new RestoreDecision("SimCard", "card-a", "append", "3")), snapshot);
         var updated = (SimCard) plan.getFirst().resource();
@@ -122,17 +121,12 @@ class BackupServiceTest {
         assertThatThrownBy(() -> BackupService.prepare(
                         document, List.of(new RestoreDecision("SimCard", "card-a", "overwrite", "2")), snapshot))
                 .hasMessageContaining("重新预览");
-        imported.getSpec().setPaymentAccountIds(List.of("missing"));
-        assertThatThrownBy(() -> BackupService.prepare(
-                        document, List.of(new RestoreDecision("SimCard", "card-a", "overwrite", "3")), snapshot))
-                .hasMessageContaining("缺少支付账户");
     }
 
     @Test
     void stopsAfterFailedWriteAndReturnsPendingRows() {
         var client = mock(ReactiveExtensionClient.class);
         when(client.list(eq(SimCard.class), isNull(), any())).thenReturn(Flux.empty());
-        when(client.list(eq(PaymentAccount.class), isNull(), any())).thenReturn(Flux.empty());
         when(client.create(any(SimCard.class))).thenAnswer(call -> {
             SimCard card = call.getArgument(0);
             return "b".equals(card.getMetadata().getName())
@@ -147,8 +141,7 @@ class BackupServiceTest {
                 List.of(
                         new CardEntry("a", card("a").getSpec()),
                         new CardEntry("b", card("b").getSpec()),
-                        new CardEntry("c", card("c").getSpec())),
-                List.of());
+                        new CardEntry("c", card("c").getSpec())));
         var text = BackupService.JSON.writeValueAsString(document);
         var request = new RestoreRequest(
                 text,

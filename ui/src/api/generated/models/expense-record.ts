@@ -22,12 +22,6 @@
 export interface ExpenseRecord {
     /**
      * 
-     * @type {string}
-     * @memberof ExpenseRecord
-     */
-    'account'?: string;
-    /**
-     * 
      * @type {number}
      * @memberof ExpenseRecord
      */
@@ -56,12 +50,6 @@ export interface ExpenseRecord {
      * @memberof ExpenseRecord
      */
     'id'?: string;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof ExpenseRecord
-     */
-    'paymentAccountIds'?: Array<string>;
     /**
      * 
      * @type {number}

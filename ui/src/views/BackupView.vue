@@ -94,7 +94,7 @@ function restore() {
   <div v-if="preview && !result" class="mt-4">
    <div v-for="item in preview.items" :key="key(item)" class="mb-3 rounded border border-gray-200 p-3">
     <div class="flex flex-wrap items-center justify-between gap-3">
-     <div><strong class="text-sm">{{ item.title }}</strong><p class="text-xs text-gray-500">{{ t(item.kind === 'SimCard' ? '号卡' : '支付账户') }} · {{ item.name }}</p></div>
+     <div><strong class="text-sm">{{ item.title }}</strong><p class="text-xs text-gray-500">{{ t('号卡') }} · {{ item.name }}</p></div>
      <FormKit v-model="choices[key(item)]" type="select" :label="t('恢复方式')" :options="(item.actions ?? []).map(value => ({ value, label: actionLabel(value) }))" :disabled="busy" />
     </div>
     <p v-if="choices[key(item)] === 'append'" class="mt-2 text-sm">{{ t('将追加记录', { count: item.appendCount }) }}</p>

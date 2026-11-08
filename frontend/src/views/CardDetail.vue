@@ -159,7 +159,6 @@ const accountInfo = computed<InfoItem[]>(() => {
   const lockedValue = lockedHint.value
   return [
     { key: 'account', label: t('detail.fields.account'), value: locked ? lockedValue : card?.account || '-', icon: 'tabler:user', locked },
-    { key: 'paymentAccounts', label: t('detail.fields.paymentAccounts'), value: locked ? lockedValue : joinList(card?.paymentAccounts ?? []) || '-', icon: 'tabler:credit-card', locked },
     { key: 'services', label: t('detail.fields.services'), value: locked ? lockedValue : joinList(card?.services ?? []) || '-', icon: 'tabler:link', locked },
     { key: 'dataCheck', label: t('detail.fields.dataCheck'), value: locked ? lockedValue : card?.dataCheck || t('detail.noIssues'), icon: 'tabler:alert-triangle', locked, valueClass: !locked && card?.dataCheck ? 'text-yellow-600 dark:text-yellow-400' : '' },
   ]

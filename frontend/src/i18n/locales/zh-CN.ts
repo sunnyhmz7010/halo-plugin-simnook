@@ -240,7 +240,6 @@ export default {
       balanceUpdatedAt: '余额更新',
       held: '已持有',
       account: '管理账号',
-      paymentAccounts: '扣款账户',
       services: '绑定的服务',
       dataCheck: '数据检查',
     },
@@ -264,7 +263,6 @@ export default {
       amount: '金额',
       amountCNY: '等额人民币',
       extendsTo: '有效期延至',
-      accounts: '扣款账户',
     },
   },
 
@@ -452,14 +450,11 @@ export default {
       failed: '自动识别失败',
       cardsFallback: 'SIM 卡',
       noRecords: '（没找到消费记录库）',
-      accountsFallback: '支付账户',
     },
     databases: {
       cards: 'SIM 卡数据库',
       records: '消费记录数据库',
-      accounts: '扣款账户数据库（可选）',
       help: '数据库链接或 ID',
-      accountsHelp: '用来显示扣款账户名称',
       optional: '可留空',
     },
     preset: '字段预设',
@@ -637,7 +632,6 @@ export default {
     sync: {
       noToken: '还没有配置 Notion token',
       noDatabases: '还没有填写 SIM 卡数据库和消费记录数据库的 ID',
-      accountsSkipped: '扣款账户数据库读取失败，已跳过（扣款账户名称不会显示）：{cause}',
       failed: '同步失败：{message}',
     },
   },

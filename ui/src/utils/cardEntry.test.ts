@@ -7,7 +7,7 @@ describe('号卡录入默认值', () => {
  it('复用配置时只复制套餐字段并独立保存数组', () => {
   const source: CardSpec = {
    name: '示例运营商 · 1234', number: '+85255551234', currency: 'HKD', account: 'private-login',
-   balance: 45, cancelled: true, nextRenewalAt: '2026-12-01', paymentAccountIds: ['wallet'],
+   balance: 45, cancelled: true, nextRenewalAt: '2026-12-01',
    keepAlive: ['自动扣费'], records: [{ amount: 100 }],
   }
   const copied = copyCardConfiguration(source)
@@ -17,19 +17,18 @@ describe('号卡录入默认值', () => {
   expect(copied).not.toHaveProperty('balance')
   expect(copied).not.toHaveProperty('cancelled')
   expect(copied).not.toHaveProperty('nextRenewalAt')
-  copied.paymentAccountIds!.push('bank')
-  expect(source.paymentAccountIds).toEqual(['wallet'])
+  copied.keepAlive!.push('购买续费套餐')
+  expect(source.keepAlive).toEqual(['自动扣费'])
  })
 
- it('新消费沿用币种和唯一有效账户，同时保留金额与汇率待填', () => {
-  const card: CardSpec = { name: '测试卡', carrier: '运营商', number: '+8613800123456', currency: 'USD', paymentAccountIds: ['bank'] }
-  const record = newExpense(card, ['bank'], '2026-11-07')
-  expect(record).toMatchObject({ type: '首次购买/开卡', date: '2026-11-07', currency: 'USD', paymentAccountIds: ['bank'] })
+ it('新消费沿用币种，同时保留金额与汇率待填', () => {
+  const card: CardSpec = { name: '测试卡', carrier: '运营商', number: '+8613800123456', currency: 'USD' }
+  const record = newExpense(card, '2026-11-07')
+  expect(record).toMatchObject({ type: '首次购买/开卡', date: '2026-11-07', currency: 'USD' })
   expect(record.title).toContain('运营商 · 3456')
   expect(record.amount).toBeUndefined()
   expect(record.rate).toBeUndefined()
-  expect(newExpense({ ...card, records: [{}], paymentAccountIds: ['bank', 'wallet'] }, ['bank', 'wallet']).paymentAccountIds).toEqual([])
-  expect(newExpense({ ...card, records: [{}] }, ['bank']).type).toBe('续费/保号')
+  expect(newExpense({ ...card, records: [{}] }).type).toBe('续费/保号')
  })
 
  it('保留已有的自定义周期，建议有效期从有效的消费日或当前到期日计算', () => {

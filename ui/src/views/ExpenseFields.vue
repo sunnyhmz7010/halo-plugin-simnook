@@ -12,12 +12,10 @@ const props = defineProps<{
  initialize?: boolean
  required?: boolean
  card: CardSpec
- accountOptions: { value: string; label: string }[]
- accountIds: string[]
  types: { value: string; label: string }[]
  currencies: { value: string; label: string }[]
 }>()
-const defaults: ExpenseRecord = props.initialize !== false && Object.keys(props.record).length === 0 ? newExpense(props.card, props.accountIds) : {}
+const defaults: ExpenseRecord = props.initialize !== false && Object.keys(props.record).length === 0 ? newExpense(props.card) : {}
 if (defaults.type) defaults.title = [cardName(props.card.carrier, props.card.number) || props.card.name, recordTypeLabel(defaults.type), defaults.date].filter(Boolean).join(' · ')
 const type = ref(props.record.type ?? defaults.type)
 const date = ref(props.record.date ?? defaults.date)
@@ -42,7 +40,5 @@ watch([type, date], ([kind, day], [previousKind, previousDay]) => {
  <FormKit v-show="currency !== 'CNY'" name="rate" type="number" :label="t('录入时汇率')" :value="record.rate" :validation="required && currency !== 'CNY' ? 'required|min:0.00000001' : 'min:0.00000001'" min="0.00000001" step="any" :help="t('填写这笔交易实际使用的汇率，1 单位原币对应的人民币金额。')" />
  <FormKit v-model="extendsTo" name="extendsTo" type="date" :label="t('本次有效期延至')" :validation="required ? 'required' : ''" />
  <VButton v-if="suggestion" size="sm" class="mb-4" :disabled="extendsTo === suggestion" @click="extendsTo = suggestion">{{ t('按周期填入日期', { date: suggestion }) }}</VButton>
- <FormKit name="paymentAccountIds" type="select" :label="t('实付扣款账户（私有）')" :placeholder="t('选择支付账户')" :value="record.paymentAccountIds ?? defaults.paymentAccountIds" :options="accountOptions" multiple searchable />
  <FormKit v-model="title" name="title" type="text" :label="t('消费记录标题（私有）')" :help="t('根据号卡、消费类型和日期生成，可以修改。')" />
- <FormKit v-if="record.account" name="account" type="text" :label="t('旧版付款账户名称（私有）')" :value="record.account" />
 </template>
