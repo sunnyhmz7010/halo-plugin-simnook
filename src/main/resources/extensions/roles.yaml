@@ -16,6 +16,20 @@ rules:
   - apiGroups: ["console.api.simnook.halo.run"]
     resources: ["cardviews"]
     verbs: ["get", "list"]
+  - apiGroups: ["console.api.simnook.halo.run"]
+    resources: ["cardviews/renewal"]
+    verbs: ["create"]
+  - apiGroups: ["console.api.simnook.halo.run"]
+    resources: ["reminders"]
+    verbs: ["get", "update"]
+  - apiGroups: ["console.api.simnook.halo.run"]
+    resources: ["backups"]
+    verbs: ["get"]
+  # Halo 将 POST /resource/name 识别为非资源请求，需为这两个动作单独授权。
+  - nonResourceURLs:
+      - "/apis/console.api.simnook.halo.run/v1alpha1/backups/preview"
+      - "/apis/console.api.simnook.halo.run/v1alpha1/backups/restore"
+    verbs: ["create"]
 ---
 apiVersion: v1alpha1
 kind: Role

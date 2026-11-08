@@ -86,21 +86,30 @@ record CardFacts(
     }
 
     static String urgency(String status, String renewal, String end, LocalDate today, Locale locale) {
-        if ("cancelled".equals(status)) return Messages.text(locale, "urgency.cancelled");
-        if (renewal == null) return Messages.text(locale, "urgency.noDate");
+        var code = urgencyCode(status, renewal, end, today);
+        if ("window".equals(code)) {
+            return Messages.text(
+                    locale, "urgency.window", String.valueOf(ChronoUnit.DAYS.between(today, LocalDate.parse(end))));
+        }
+        return Messages.text(locale, "urgency." + code);
+    }
+
+    static String urgencyCode(String status, String renewal, String end, LocalDate today) {
+        if ("cancelled".equals(status)) return "cancelled";
+        if (renewal == null) return "noDate";
         var start = LocalDate.parse(renewal);
         var last = end == null ? start : LocalDate.parse(end);
-        if ("expired".equals(status) || last.isBefore(today)) return Messages.text(locale, "urgency.overdue");
+        if ("expired".equals(status) || last.isBefore(today)) return "overdue";
         if (last.isAfter(start) && !today.isBefore(start)) {
-            return Messages.text(locale, "urgency.window", String.valueOf(ChronoUnit.DAYS.between(today, last)));
+            return "window";
         }
         var days = ChronoUnit.DAYS.between(today, start);
-        if (days <= 3) return Messages.text(locale, "urgency.days3");
-        if (days <= 7) return Messages.text(locale, "urgency.days7");
-        if (days <= 15) return Messages.text(locale, "urgency.days15");
-        if (days <= 30) return Messages.text(locale, "urgency.days30");
-        if (days <= 60) return Messages.text(locale, "urgency.days60");
-        return Messages.text(locale, "urgency.beyond");
+        if (days <= 3) return "days3";
+        if (days <= 7) return "days7";
+        if (days <= 15) return "days15";
+        if (days <= 30) return "days30";
+        if (days <= 60) return "days60";
+        return "beyond";
     }
 
     static List<SimCard.ExpenseRecord> records(SimCard.CardSpec spec) {

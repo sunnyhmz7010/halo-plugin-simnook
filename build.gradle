@@ -89,15 +89,14 @@ tasks.register('processFrontendResources', Sync) {
     shouldRunAfter 'processResources'
 }
 
-// 模板、Logo 和异步分块共用 Vite 生成的内容指纹资源。
+// 模板与异步分块共用 Vite 生成的内容指纹资源。
 def frontendManifest = layout.projectDirectory.file('frontend/dist/.vite/manifest.json')
 tasks.named('processResources') {
     dependsOn 'frontendBuild'
     inputs.file(frontendManifest)
     filesMatching(['templates/simnook.html', 'plugin.yaml']) {
         def manifest = new groovy.json.JsonSlurper().parse(frontendManifest.asFile)
-        expand(frontendScript: manifest['index.html'].file, frontendStyle: manifest['style.css'].file,
-                frontendIcon: manifest['src/assets/simnook.svg'].file)
+        expand(frontendScript: manifest['index.html'].file, frontendStyle: manifest['style.css'].file)
     }
 }
 
@@ -108,7 +107,7 @@ haloPlugin {
         groupingRules {
             simnookApis {
                 displayName = 'SIMnook API'
-                pathsToMatch = ['/apis/simnook.halo.run/v1alpha1/**']
+                pathsToMatch = ['/apis/simnook.halo.run/v1alpha1/**', '/apis/console.api.simnook.halo.run/v1alpha1/**']
             }
         }
         groupedApiMappings = ['/v3/api-docs/simnookApis': 'simnook.json']

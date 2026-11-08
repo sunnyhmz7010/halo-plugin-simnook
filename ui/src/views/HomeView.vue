@@ -3,23 +3,35 @@ import { useSimnookI18n } from '../locales'
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { axiosInstance } from '@halo-dev/api-client'
 import { Dialog, Toast, VPageHeader, VCard, VButton, VEntityContainer, VEntity, VEntityField, VPagination, VLoading, VEmpty, VModal, VTabbar } from '@halo-dev/components'
-import IconSimCard from '~icons/ri/sim-card-2-line'
-import { PaymentAccountV1alpha1Api, SimCardV1alpha1Api, type SimCard, type CardSpec, type PaymentAccount } from '../api/generated'
+import { PaymentAccountV1alpha1Api, SimCardV1alpha1Api, SimnookManagementV1alpha1Api, type SimCard, type CardSpec, type PaymentAccount, type ManagedCardView } from '../api/generated'
 import PaymentAccountsView from './PaymentAccountsView.vue'
 import ExpenseFields from './ExpenseFields.vue'
+import QuickRenewal from './QuickRenewal.vue'
+import ReminderPanel from './ReminderPanel.vue'
+import BackupView from './BackupView.vue'
+import { filterCardViews, URGENCY_CODES } from '../utils/cardManagement'
 import { BUILTIN_CARRIERS, builtinLogoOptions, carrierLogo } from '../../../frontend/shared/carriers'
-import { CYCLE_OPTIONS, cardName, copyCardConfiguration, cycleChoice, entryExpiry } from '../utils/cardEntry'
+import { CYCLE_OPTIONS, cardName, copyCardConfiguration, cycleChoice, entryExpiry, localDay } from '../utils/cardEntry'
 
 const { t, locale, label, recordTypeLabel } = useSimnookI18n()
 
 const api = new SimCardV1alpha1Api(undefined, '', axiosInstance)
 const accountApi = new PaymentAccountV1alpha1Api(undefined, '', axiosInstance)
+const managementApi = new SimnookManagementV1alpha1Api(undefined, '', axiosInstance)
 const accountView = ref<InstanceType<typeof PaymentAccountsView>>()
 const tab = ref('cards')
-const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'accounts', label: t('支付账户') }])
-const cards = ref<SimCard[]>([])
+const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'todo', label: t('续费待办') }, { id: 'accounts', label: t('支付账户') }, { id: 'backup', label: t('备份恢复') }])
+const cards = ref<ManagedCardView[]>([])
 const accounts = ref<PaymentAccount[]>([])
-const page = ref(1), size = ref(10), total = ref(0)
+const page = ref(1), size = ref(10)
+const keyword = ref(''), countryFilter = ref(''), statusFilter = ref(''), urgencyFilter = ref('')
+const renewing = ref<ManagedCardView>()
+const urgencyLabels: Record<string, string> = { window: '续费窗口开放', overdue: '已逾期', days3: '未来 3 天内', days7: '未来 7 天内', days15: '未来 15 天内', days30: '未来 30 天内', days60: '未来 60 天内', beyond: '超过 60 天', noDate: '无续费日期', cancelled: '已注销' }
+const filteredCards = computed(() => filterCardViews(cards.value, { keyword: keyword.value, country: countryFilter.value, status: statusFilter.value, urgency: urgencyFilter.value, todo: tab.value === 'todo' }))
+const total = computed(() => filteredCards.value.length)
+const pagedCards = computed(() => filteredCards.value.slice((page.value - 1) * size.value, page.value * size.value))
+const countryOptions = computed(() => [...new Set(cards.value.map(card => card.countryName).filter((value): value is string => Boolean(value)))].sort().map(value => ({ value, label: value })))
+function clearFilters() { keyword.value = ''; countryFilter.value = ''; statusFilter.value = ''; urgencyFilter.value = '' }
 const loading = ref(false), saving = ref(false), visible = ref(false), conflict = ref(false), loadError = ref(false)
 const deleting = ref('')
 const editing = ref<SimCard>()
@@ -28,9 +40,8 @@ const formTab = ref('basic')
 const formTabs = computed(() => [{ id: 'basic', label: t('基本信息') }, { id: 'renewal', label: t('续费与消费') }, { id: 'more', label: t('更多设置') }])
 const cycle = ref('')
 let initializing = false
-type CardCheck = { name: string; statusLabel: string; urgency: string; dataCheck: string; history: { id: string; title: string; date?: string; type?: string; checks: string[] }[] }
 const checking = ref('')
-const check = ref<CardCheck>()
+const check = ref<ManagedCardView>()
 const typeOptions = computed(() => [
  { label: t('实体 SIM'), value: 'physical' },
  { label: t('eSIM · 直写手机'), value: 'embedded' },
@@ -110,13 +121,19 @@ async function load() {
  const current = ++sequence
  loading.value = true; loadError.value = false
  try {
-  const { data } = await api.listSimCard({ page: page.value, size: size.value, fieldSelector: ['deleting=false'] })
+  const { data } = await managementApi.listCardViews({ headers: { 'Accept-Language': locale.value } })
   if (current !== sequence) return
-  cards.value = data.items; total.value = data.total
-  const lastPage = Math.max(1, data.totalPages)
+  cards.value = data.cards ?? []
+  const lastPage = Math.max(1, Math.ceil(total.value / size.value))
   if (page.value > lastPage) page.value = lastPage
  } catch (error) { if (current === sequence) { loadError.value = true; Toast.error(t('加载失败，请重试')); console.error(error) } }
  finally { if (current === sequence) loading.value = false }
+}
+async function openCard(card: ManagedCardView, copy = false) {
+ try {
+  const { data } = await api.getSimCard({ name: card.id! })
+  await edit(copy ? undefined : data, copy ? data.spec : undefined)
+ } catch (error) { Toast.error(t('加载失败，请重试')); console.error(error) }
 }
 async function edit(card?: SimCard, template?: CardSpec) {
  tab.value = 'cards'
@@ -176,11 +193,11 @@ function validRenewalWindow(spec: CardSpec): boolean {
 function showInvalidTab() {
  formTab.value = !form.value.name?.trim() || form.value.name.length > 100 ? 'basic' : 'renewal'
 }
-async function inspect(card: SimCard) {
+async function inspect(card: ManagedCardView) {
  if (checking.value) return
- checking.value = card.metadata.name
+ checking.value = card.id!
  try {
-  const { data } = await axiosInstance.get<CardCheck>(`/apis/console.api.simnook.halo.run/v1alpha1/cardviews/${encodeURIComponent(card.metadata.name)}`, { headers: { 'Accept-Language': locale.value } })
+  const { data } = await managementApi.getCardView({ name: card.id! }, { headers: { 'Accept-Language': locale.value } })
   check.value = data
  } catch (error) { Toast.error(t('数据检查加载失败')); console.error(error) }
  finally { checking.value = '' }
@@ -202,50 +219,63 @@ async function save() {
   else { Toast.error(t('保存失败，请检查表单或稍后重试')); console.error(error) }
  } finally { saving.value = false }
 }
-function remove(card: SimCard) {
- Dialog.warning({ title: t('删除号卡'), description: t('删除号卡确认', { name: card.spec.name }), confirmText: t('删除'), showCancel: true,
+function remove(card: ManagedCardView) {
+ Dialog.warning({ title: t('删除号卡'), description: t('删除号卡确认', { name: card.name }), confirmText: t('删除'), showCancel: true,
   onConfirm: async () => {
-   deleting.value = card.metadata.name
-   try { await api.deleteSimCard({ name: card.metadata.name }); Toast.success(t('已删除')); await load() }
+   deleting.value = card.id!
+   try { await api.deleteSimCard({ name: card.id! }); Toast.success(t('已删除')); await load() }
    catch (error) { Toast.error(t('删除失败')); console.error(error) }
    finally { deleting.value = '' }
   },
  })
 }
-watch([page, size], load)
+watch([keyword, countryFilter, statusFilter, urgencyFilter, size, tab], () => { page.value = 1 })
+watch(filteredCards, () => { page.value = Math.min(page.value, Math.max(1, Math.ceil(total.value / size.value))) })
+watch(locale, load)
 onMounted(load)
 function submit() { (document.getElementById('simnook-form') as HTMLFormElement | null)?.requestSubmit() }
 </script>
 
 <template>
  <VPageHeader title="SIMnook">
-  <template #icon><IconSimCard /></template>
   <template #actions>
-   <VButton v-if="tab === 'cards'" type="secondary" @click="edit()">{{ t('新增号卡') }}</VButton>
-   <VButton v-else type="secondary" @click="accountView?.edit()">{{ t('新增支付账户') }}</VButton>
+   <VButton v-if="tab === 'cards' || tab === 'todo'" type="secondary" @click="edit()">{{ t('新增号卡') }}</VButton>
+   <VButton v-else-if="tab === 'accounts'" type="secondary" @click="accountView?.edit()">{{ t('新增支付账户') }}</VButton>
   </template>
  </VPageHeader>
  <div class="m-0 md:m-4">
- <PaymentAccountsView v-if="tab === 'accounts'" ref="accountView" @edit-card="edit">
-  <template #header><VTabbar v-model:active-id="tab" :items="tabs" class="w-full !rounded-none" type="outline" /></template>
- </PaymentAccountsView>
- <VCard v-else :body-class="['!p-0']">
-  <template #header><VTabbar v-model:active-id="tab" :items="tabs" class="w-full !rounded-none" type="outline" /></template>
+ <VTabbar v-model:active-id="tab" :items="tabs" class="mb-4 w-full" type="outline" />
+ <BackupView v-if="tab === 'backup'" @restored="load" />
+ <PaymentAccountsView v-else-if="tab === 'accounts'" ref="accountView" @edit-card="edit" />
+ <template v-else>
+ <ReminderPanel v-if="tab === 'todo'" />
+ <VCard :body-class="['!p-0']">
+  <template #header>
+   <div class="flex flex-wrap items-end gap-3">
+    <SearchInput v-model="keyword" :placeholder="t('搜索名称、号码或运营商')" />
+    <FormKit v-model="countryFilter" type="select" :label="t('号码国家')" :options="[{ value: '', label: t('全部') }, ...countryOptions]" />
+    <FormKit v-model="statusFilter" type="select" :label="t('状态')" :options="[{ value: '', label: t('全部') }, { value: 'active', label: t('使用中') }, { value: 'expired', label: t('已过期') }, { value: 'cancelled', label: t('已注销') }]" />
+    <FormKit v-model="urgencyFilter" type="select" :label="t('续费紧急度')" :options="[{ value: '', label: t('全部') }, ...URGENCY_CODES.map(value => ({ value, label: t(urgencyLabels[value]!) }))]" />
+    <VButton v-if="keyword || countryFilter || statusFilter || urgencyFilter" size="sm" @click="clearFilters">{{ t('清除筛选') }}</VButton>
+   </div>
+  </template>
   <VLoading v-if="loading" />
   <VEmpty v-else-if="loadError" :title="t('加载失败')" :message="t('请检查权限或网络后重试')"><template #actions><VButton @click="load">{{ t('重试') }}</VButton></template></VEmpty>
-  <VEmpty v-else-if="!cards.length" :title="t('还没有号卡')" :message="t('首次安装为空库，点击新增号卡开始录入。')" />
-  <VEntityContainer v-else><VEntity v-for="card in cards" :key="card.metadata.name">
-   <template #start><VEntityField :title="card.spec.name" :description="[card.spec.carrier?.trim(), card.spec.number?.trim() || t('未填写号码')].filter(Boolean).join(' · ')" @click="edit(card)" /></template>
+  <VEmpty v-else-if="!filteredCards.length" :title="t(cards.length ? '没有匹配的号卡' : '还没有号卡')" :message="t(cards.length ? '调整筛选条件查看其他号卡。' : '首次安装为空库，点击新增号卡开始录入。')" />
+  <VEntityContainer v-else><VEntity v-for="card in pagedCards" :key="card.id">
+   <template #start><VEntityField :title="card.name" :description="[card.carrier?.trim(), card.number?.trim() || t('未填写号码')].filter(Boolean).join(' · ')" @click="openCard(card)" /></template>
    <template #end>
-    <VEntityField :title="card.spec.cancelled || card.spec.cancelledAt ? t('已注销') : undefined" :description="t('消费记录数量', card.spec.records?.length || 0)" />
-    <VButton size="sm" :loading="checking === card.metadata.name" @click="inspect(card)">{{ t('数据检查') }}</VButton>
-    <VButton size="sm" @click="edit(undefined, card.spec)">{{ t('再添同款') }}</VButton>
-    <VButton size="sm" @click="edit(card)">{{ t('编辑') }}</VButton>
-    <VButton size="sm" type="danger" :loading="deleting === card.metadata.name" @click="remove(card)">{{ t('删除') }}</VButton>
+    <VEntityField :title="[card.statusLabel, card.urgency].filter(Boolean).join(' · ')" :description="t('消费记录数量', card.history?.length || 0)" />
+    <VButton v-if="card.status !== 'cancelled'" size="sm" @click="renewing = card">{{ t('快捷续费') }}</VButton>
+    <VButton size="sm" :loading="checking === card.id" @click="inspect(card)">{{ t('数据检查') }}</VButton>
+    <VButton size="sm" @click="openCard(card, true)">{{ t('再添同款') }}</VButton>
+    <VButton size="sm" @click="openCard(card)">{{ t('编辑') }}</VButton>
+    <VButton size="sm" type="danger" :loading="deleting === card.id" @click="remove(card)">{{ t('删除') }}</VButton>
    </template>
   </VEntity></VEntityContainer>
   <template #footer><VPagination v-model:page="page" v-model:size="size" :total="total" :size-options="[10, 20, 50]" :page-label="t('页')" :size-label="t('条 / 页')" :total-label="t('分页总数', { count: total })" /></template>
- </VCard></div>
+ </VCard></template></div>
+ <QuickRenewal v-if="renewing?.id" :name="renewing.id" :today="renewing.asOfDate || localDay()" @close="renewing = undefined" @saved="renewing = undefined; load()" />
  <VModal v-if="visible" :title="editing ? t('编辑号卡') : t('新增号卡')" :width="760" mount-to-body @close="visible = false">
   <div v-if="conflict" class="mb-4"><p>{{ t('编辑冲突提示') }}</p><VButton @click="reloadEditing">{{ t('重新加载') }}</VButton></div>
   <VTabbar v-model:active-id="formTab" :items="formTabs" class="mb-4" type="outline" />
@@ -306,8 +336,8 @@ function submit() { (document.getElementById('simnook-form') as HTMLFormElement 
    <VEntity>
     <template #start><VEntityField :title="`${check.statusLabel} · ${check.urgency}`" :description="check.dataCheck || t('号卡没有检查提示')" /></template>
    </VEntity>
-   <VEntity v-for="record in check.history.filter(item => item.checks.length)" :key="record.id">
-    <template #start><VEntityField :title="record.title?.trim() || [record.date, recordTypeLabel(record.type)].map(value => value?.trim()).filter(Boolean).join(' · ') || t('未命名消费记录')" :description="record.checks.join(locale.startsWith('zh') ? '；' : '; ')" /></template>
+   <VEntity v-for="record in check.history?.filter(item => item.checks?.length)" :key="record.id">
+    <template #start><VEntityField :title="record.title?.trim() || [record.date, recordTypeLabel(record.type)].map(value => value?.trim()).filter(Boolean).join(' · ') || t('未命名消费记录')" :description="record.checks?.join(locale.startsWith('zh') ? '；' : '; ')" /></template>
    </VEntity>
   </VEntityContainer>
  </VModal>

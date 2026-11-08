@@ -1,0 +1,54 @@
+apiVersion: notification.halo.run/v1alpha1
+kind: ReasonType
+metadata:
+  name: simnook-renewal-reminder
+spec:
+  displayName: SIMnook 续费提醒 / Renewal reminders
+  description: 已订阅管理员的每日续费待办汇总 / Daily renewal digest for subscribed managers
+  properties:
+    - name: recipient
+      type: string
+      optional: false
+    - name: businessDate
+      type: string
+      optional: false
+    - name: summary
+      type: string
+      optional: false
+    - name: summaryEn
+      type: string
+      optional: false
+---
+apiVersion: notification.halo.run/v1alpha1
+kind: NotificationTemplate
+metadata:
+  name: simnook-renewal-reminder-default
+spec:
+  reasonSelector:
+    reasonType: simnook-renewal-reminder
+    language: default
+  template:
+    title: "SIMnook 续费待办 · [(${businessDate})]"
+    rawBody: |
+      [(${summary})]
+      请登录 Halo 后台 SIMnook 处理续费。
+    htmlBody: |
+      <pre th:text="${summary}"></pre>
+      <p>请登录 Halo 后台 SIMnook 处理续费。</p>
+---
+apiVersion: notification.halo.run/v1alpha1
+kind: NotificationTemplate
+metadata:
+  name: simnook-renewal-reminder-en
+spec:
+  reasonSelector:
+    reasonType: simnook-renewal-reminder
+    language: en
+  template:
+    title: "SIMnook renewal digest · [(${businessDate})]"
+    rawBody: |
+      [(${summaryEn})]
+      Open SIMnook in the Halo Console to record renewals.
+    htmlBody: |
+      <pre th:text="${summaryEn}"></pre>
+      <p>Open SIMnook in the Halo Console to record renewals.</p>

@@ -3,8 +3,6 @@ import { Icon } from '@iconify/vue'
 import { computed, inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import siteFavicon from '@/assets/simnook.svg?no-inline'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { DataTooltip } from '@/components/ui/data-tooltip'
 import { useAppStore } from '@/stores/app'
@@ -63,11 +61,7 @@ const sitename = computed(() => appStore.sitename)
     :class="isScrolled ? 'backdrop-blur-xl' : 'bg-transparent'"
   >
     <div class="px-4 flex-between h-14 max-w-[1280px] mx-auto">
-      <div class="flex items-center gap-3 cursor-pointer" @click="router.push('/')">
-        <Avatar class="size-8">
-          <AvatarImage :src="siteFavicon" :alt="sitename" />
-          <AvatarFallback>{{ sitename.slice(0, 1) }}</AvatarFallback>
-        </Avatar>
+      <div class="flex items-center cursor-pointer" @click="router.push('/')">
         <h3 class="m-0 text-lg font-semibold">
           {{ sitename }}
         </h3>

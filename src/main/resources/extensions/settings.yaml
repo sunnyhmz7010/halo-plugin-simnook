@@ -5,6 +5,51 @@ metadata:
   name: simnook-settings
 spec:
   forms:
+    - group: reminders
+      label: 续费提醒
+      formSchema:
+        - $cmp: simnook-setting-field
+          name: sendTime
+          value: "09:00"
+          props:
+            inputType: text
+            name: sendTime
+            label: 每日汇总时间
+            value: "09:00"
+            validation: required|matches:/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/
+            help: 使用 HH:mm。管理员需要在 SIMnook 后台各自订阅，邮件等渠道沿用 Halo 通知设置。
+            english:
+              label: Daily digest time
+              help: Use HH:mm. Managers opt in from SIMnook. Delivery channels follow Halo notification settings.
+        - $cmp: simnook-setting-field
+          name: timezone
+          value: Asia/Shanghai
+          props:
+            inputType: text
+            name: timezone
+            label: 业务时区
+            value: Asia/Shanghai
+            validation: required
+            help: 使用 IANA 时区，如 Asia/Shanghai。号卡状态与提醒按同一时区计算。
+            english:
+              label: Business timezone
+              help: Use an IANA timezone, e.g. Asia/Shanghai. Card status and reminders use the same timezone.
+        - $cmp: simnook-setting-field
+          name: daysAhead
+          value: 7
+          props:
+            inputType: number
+            name: daysAhead
+            label: 提前提醒天数
+            value: 7
+            validation: required|number|min:1|max:60
+            min: 1
+            max: 60
+            step: 1
+            help: 汇总此范围内的号卡，同时包含已逾期和已开放续费窗口的号卡。
+            english:
+              label: Days ahead
+              help: Include cards due within this range, overdue cards and open renewal windows.
     - group: general
       label: 展示
       formSchema:
@@ -178,7 +223,7 @@ spec:
               label: Show the visitor information card
               help: When enabled, the visitor browser requests third-party IP geolocation services to show its location and map connection lines.
     - group: announcement
-      label: 公告 / Announcement
+      label: 公告
       formSchema:
         - $cmp: simnook-setting-field
           name: alertEnabled
@@ -212,7 +257,7 @@ spec:
               label: Announcement content
               help: Supports common Markdown, such as bold text, links, and images. The content is public.
     - group: background
-      label: 背景 / Background
+      label: 背景
       formSchema:
         - $cmp: simnook-setting-field
           name: backgroundEnabled

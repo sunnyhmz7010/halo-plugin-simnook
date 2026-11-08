@@ -12,7 +12,6 @@ spec:
   repo: https://github.com/sunnyhmz7010/halo-plugin-simnook
   issues: https://github.com/sunnyhmz7010/halo-plugin-simnook/issues
   displayName: "SIMnook"
-  logo: frontend/${frontendIcon}
   description: "号卡与消费记录管理，公开脱敏卡片墙"
   settingName: simnook-settings
   configMapName: simnook-config

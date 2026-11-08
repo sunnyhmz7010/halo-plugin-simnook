@@ -1,6 +1,5 @@
 package run.halo.simnook;
 
-import java.time.LocalDate;
 import java.util.Map;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -40,17 +39,20 @@ public class PublicEndpoint implements CustomEndpoint {
     public RouterFunction<ServerResponse> endpoint() {
         return RouterFunctions.route()
                 .GET("cards", request -> {
-                    var today = LocalDate.now();
-                    return client.list(
-                                    SimCard.class,
-                                    c -> c.getMetadata().getDeletionTimestamp() == null,
-                                    PublicCard.SOURCE_ORDER)
-                            .index()
-                            .map(item -> PublicCard.from(
-                                    item.getT2(), today, item.getT1().intValue()))
-                            .collectList()
-                            .flatMap(cards -> ServerResponse.ok()
-                                    .bodyValue(Map.of("cards", cards, "demo", false, "full", false)));
+                    return settings.getSettingValues()
+                            .map(RenewalSettings::from)
+                            .flatMap(schedule -> client.list(
+                                            SimCard.class,
+                                            c -> c.getMetadata().getDeletionTimestamp() == null,
+                                            PublicCard.SOURCE_ORDER)
+                                    .index()
+                                    .map(item -> PublicCard.from(
+                                            item.getT2(),
+                                            schedule.today(),
+                                            item.getT1().intValue()))
+                                    .collectList()
+                                    .flatMap(cards -> ServerResponse.ok()
+                                            .bodyValue(Map.of("cards", cards, "demo", false, "full", false))));
                 })
                 .GET("site", this::site)
                 .build();
