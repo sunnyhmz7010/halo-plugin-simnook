@@ -39,7 +39,7 @@ const useAppStore = defineStore('app', () => {
   const loading = ref<boolean>(true)
 
   // 使用 VueUse 的 useStorageAsync 实现自动持久化
-  const themeMode = useStorageAsync<ThemeMode>('themeMode', 'auto', localStorage)
+  const storedThemeMode = useStorageAsync<ThemeMode | null>('themeMode', null, localStorage)
   const publicSettings = ref<SiteInfo>()
   const nodeSelectedGroup = useStorageAsync<string>('cardSelectedGroup', 'all', localStorage)
   const isLoggedIn = ref<boolean>(false)
@@ -47,6 +47,19 @@ const useAppStore = defineStore('app', () => {
 
   // 首页滚动位置记忆
   const homeScrollPosition = ref<number>(0)
+
+  // 未手动选择主题时跟随站点默认值，不将默认值写入访客偏好。
+  const defaultThemeMode = computed<ThemeMode>(() => {
+    const mode = publicSettings.value?.theme_settings?.defaultTheme
+    return isValidThemeMode(mode) ? mode : 'auto'
+  })
+
+  const themeMode = computed<ThemeMode>({
+    get: () => isValidThemeMode(storedThemeMode.value) ? storedThemeMode.value : defaultThemeMode.value,
+    set: (val) => {
+      storedThemeMode.value = val
+    },
+  })
 
   // Visitor-selected card style; null falls back to the site default
   const storedCardStyle = useStorageAsync<CardStyle | null>('cardStyle', null, localStorage)
@@ -160,56 +173,6 @@ const useAppStore = defineStore('app', () => {
     return true
   })
 
-  // 计算属性：ICP 备案配置
-  const icpEnabled = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.icpEnabled === 'boolean') {
-      return settings.icpEnabled
-    }
-    return false
-  })
-
-  const icpNumber = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.icpNumber === 'string') {
-      return settings.icpNumber
-    }
-    return ''
-  })
-
-  const icpUrl = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.icpUrl === 'string' && safeUrl(settings.icpUrl)) {
-      return safeUrl(settings.icpUrl)
-    }
-    return 'https://beian.miit.gov.cn/'
-  })
-
-  // 计算属性：公安备案配置
-  const policeEnabled = computed<boolean>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.policeEnabled === 'boolean') {
-      return settings.policeEnabled
-    }
-    return false
-  })
-
-  const policeNumber = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.policeNumber === 'string') {
-      return settings.policeNumber
-    }
-    return ''
-  })
-
-  const policeUrl = computed<string>(() => {
-    const settings = publicSettings.value?.theme_settings
-    if (settings && typeof settings.policeUrl === 'string' && settings.policeUrl.trim()) {
-      return safeUrl(settings.policeUrl)
-    }
-    return ''
-  })
-
   // 计算属性：自定义背景配置
   const backgroundEnabled = computed<boolean>(() => {
     const settings = publicSettings.value?.theme_settings
@@ -264,12 +227,6 @@ const useAppStore = defineStore('app', () => {
 
   // 使用 VueUse 的 usePreferredDark 检测系统主题偏好
   const prefersDark = usePreferredDark()
-
-  watch(themeMode, (mode) => {
-    if (!isValidThemeMode(mode)) {
-      themeMode.value = 'auto'
-    }
-  }, { immediate: true })
 
   // 计算当前是否为暗色模式
   const isDark = computed(() => {
@@ -334,12 +291,6 @@ const useAppStore = defineStore('app', () => {
     hideAdminEntryWhenLoggedOut,
     disablePageAnimation,
     cancelledLast,
-    icpEnabled,
-    icpNumber,
-    icpUrl,
-    policeEnabled,
-    policeNumber,
-    policeUrl,
     backgroundEnabled,
     backgroundType,
     lightBackgroundUrl,

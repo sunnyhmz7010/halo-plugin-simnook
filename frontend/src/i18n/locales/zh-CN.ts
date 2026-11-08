@@ -486,7 +486,6 @@ export default {
       basic: '基础设置',
       alert: '公告设置',
       page: '页面设置',
-      icp: '备案设置',
       background: '自定义背景',
     },
     fields: {
@@ -559,30 +558,6 @@ export default {
       cancelledLast: {
         name: '已注销后置',
         help: '开启后已注销的号码排到最后',
-      },
-      icpEnabled: {
-        name: '显示备案号',
-        help: '在页脚显示网站备案号',
-      },
-      icpNumber: {
-        name: '备案号',
-        help: '网站备案号（如：京ICP备12345678号）',
-      },
-      icpUrl: {
-        name: '备案跳转链接',
-        help: '点击备案号跳转的链接地址',
-      },
-      policeEnabled: {
-        name: '显示公安备案',
-        help: '在页脚显示公安备案信息',
-      },
-      policeNumber: {
-        name: '公安备案号',
-        help: '公安备案号（如：京公网安备 11010502000000号）',
-      },
-      policeUrl: {
-        name: '公安备案跳转链接',
-        help: '点击公安备案号跳转的链接地址，留空则不跳转',
       },
       backgroundEnabled: {
         name: '启用自定义背景',

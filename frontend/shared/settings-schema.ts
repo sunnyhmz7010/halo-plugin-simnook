@@ -38,14 +38,6 @@ export const SETTINGS_SCHEMA: SettingItem[] = [
   { key: 'disablePageAnimation', name: '减弱过渡动画', type: 'switch', default: false, help: '减少页面过渡动画效果，提升访问速度和响应性' },
   { key: 'cancelledLast', name: '已注销后置', type: 'switch', default: true, help: '开启后已注销的号码排到最后' },
 
-  { name: '备案设置', type: 'title' },
-  { key: 'icpEnabled', name: '显示备案号', type: 'switch', default: false, help: '在页脚显示网站备案号' },
-  { key: 'icpNumber', name: '备案号', type: 'string', default: '', help: '网站备案号（如：京ICP备12345678号）' },
-  { key: 'icpUrl', name: '备案跳转链接', type: 'string', default: 'https://beian.miit.gov.cn/', help: '点击备案号跳转的链接地址' },
-  { key: 'policeEnabled', name: '显示公安备案', type: 'switch', default: false, help: '在页脚显示公安备案信息' },
-  { key: 'policeNumber', name: '公安备案号', type: 'string', default: '', help: '公安备案号（如：京公网安备 11010502000000号）' },
-  { key: 'policeUrl', name: '公安备案跳转链接', type: 'string', default: '', help: '点击公安备案号跳转的链接地址，留空则不跳转' },
-
   { name: '自定义背景', type: 'title' },
   { key: 'backgroundEnabled', name: '启用自定义背景', type: 'switch', default: false, help: '启用后可设置自定义图片或视频作为页面背景' },
   { key: 'backgroundType', name: '背景类型', type: 'select', default: 'image', options: 'image,video', optionLabels: '图片,视频' },

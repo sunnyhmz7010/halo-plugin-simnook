@@ -6,7 +6,7 @@ metadata:
 spec:
   forms:
     - group: general
-      label: 展示设置 / Display
+      label: 展示
       formSchema:
         - $cmp: simnook-setting-field
           name: sitename
@@ -40,6 +40,29 @@ spec:
                 auto: Follow browser
                 zh-CN: 简体中文
                 en: English
+        - $cmp: simnook-setting-field
+          name: defaultTheme
+          value: auto
+          props:
+            inputType: select
+            name: defaultTheme
+            label: 默认主题
+            value: auto
+            options:
+              - label: 自动（跟随系统）
+                value: auto
+              - label: 深色
+                value: dark
+              - label: 浅色
+                value: light
+            help: 访客未手动选择主题时使用此设置，手动选择会保存在访客浏览器中。
+            english:
+              label: Default theme
+              help: Used until visitors choose a theme. Their choice is saved in their browser.
+              options:
+                auto: Auto (follow system)
+                dark: Dark
+                light: Light
         - $cmp: simnook-setting-field
           name: defaultCardStyle
           value: namecard
@@ -275,66 +298,3 @@ spec:
             english:
               label: Background overlay
               help: Positive values darken the background, negative values reduce its opacity, and 0 disables the overlay.
-    - group: filing
-      label: 页脚备案 / Filing
-      formSchema:
-        - $cmp: simnook-setting-field
-          name: icpEnabled
-          value: false
-          props:
-            inputType: checkbox
-            name: icpEnabled
-            label: 显示 ICP 备案号
-            value: false
-            english:
-              label: Show the ICP registration number
-        - $cmp: simnook-setting-field
-          name: icpNumber
-          props:
-            inputType: text
-            name: icpNumber
-            label: ICP 备案号
-            validation: length:0,100
-            english:
-              label: ICP registration number
-        - $cmp: simnook-setting-field
-          name: icpUrl
-          value: https://beian.miit.gov.cn/
-          props:
-            inputType: url
-            name: icpUrl
-            label: ICP 备案链接
-            value: https://beian.miit.gov.cn/
-            validation: url
-            english:
-              label: ICP registration link
-        - $cmp: simnook-setting-field
-          name: policeEnabled
-          value: false
-          props:
-            inputType: checkbox
-            name: policeEnabled
-            label: 显示公安备案号
-            value: false
-            english:
-              label: Show the public-security registration number
-        - $cmp: simnook-setting-field
-          name: policeNumber
-          props:
-            inputType: text
-            name: policeNumber
-            label: 公安备案号
-            validation: length:0,100
-            english:
-              label: Public-security registration number
-        - $cmp: simnook-setting-field
-          name: policeUrl
-          props:
-            inputType: url
-            name: policeUrl
-            label: 公安备案链接
-            validation: url
-            help: 留空时仅显示文字。
-            english:
-              label: Public-security registration link
-              help: Leave empty to show the number as plain text.

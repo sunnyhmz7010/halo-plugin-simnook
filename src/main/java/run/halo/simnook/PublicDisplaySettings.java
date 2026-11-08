@@ -13,12 +13,12 @@ record PublicDisplaySettings(String title, Map<String, Object> theme) {
         var general = values.getOrDefault("general", MissingNode.getInstance());
         var announcement = values.getOrDefault("announcement", MissingNode.getInstance());
         var background = values.getOrDefault("background", MissingNode.getInstance());
-        var filing = values.getOrDefault("filing", MissingNode.getInstance());
         var title = text(general, "sitename", "", 100).strip();
         return new PublicDisplaySettings(
                 title.isEmpty() ? "SIMnook" : title,
                 Map.ofEntries(
                         entry("defaultLanguage", choice(general, "defaultLanguage", "auto", "auto", "zh-CN", "en")),
+                        entry("defaultTheme", choice(general, "defaultTheme", "auto", "auto", "dark", "light")),
                         entry(
                                 "defaultCardStyle",
                                 choice(general, "defaultCardStyle", "namecard", "namecard", "dial", "bar")),
@@ -60,13 +60,7 @@ record PublicDisplaySettings(String title, Map<String, Object> theme) {
                                 Math.clamp(background.path("backgroundBlur").asInt(0), 0, 100)),
                         entry(
                                 "backgroundOverlay",
-                                Math.clamp(background.path("backgroundOverlay").asInt(0), -100, 100)),
-                        entry("icpEnabled", filing.path("icpEnabled").asBoolean(false)),
-                        entry("icpNumber", text(filing, "icpNumber", "", 100)),
-                        entry("icpUrl", text(filing, "icpUrl", "https://beian.miit.gov.cn/", 4_096)),
-                        entry("policeEnabled", filing.path("policeEnabled").asBoolean(false)),
-                        entry("policeNumber", text(filing, "policeNumber", "", 100)),
-                        entry("policeUrl", text(filing, "policeUrl", "", 4_096))));
+                                Math.clamp(background.path("backgroundOverlay").asInt(0), -100, 100))));
     }
 
     private static String text(JsonNode group, String key, String fallback, int limit) {

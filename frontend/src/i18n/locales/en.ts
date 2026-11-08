@@ -480,7 +480,6 @@ const en: MessageSchema = {
       basic: 'Basic settings',
       alert: 'Announcement',
       page: 'Page settings',
-      icp: 'ICP filing',
       background: 'Custom background',
     },
     fields: {
@@ -553,30 +552,6 @@ const en: MessageSchema = {
       cancelledLast: {
         name: 'Put cancelled numbers last',
         help: 'Move cancelled numbers to the end of the list',
-      },
-      icpEnabled: {
-        name: 'Show ICP filing',
-        help: 'Display China ICP filing number in the footer',
-      },
-      icpNumber: {
-        name: 'ICP filing number',
-        help: 'Website ICP filing number (e.g. 京ICP备12345678号)',
-      },
-      icpUrl: {
-        name: 'ICP filing link',
-        help: 'Target URL when clicking the ICP filing number',
-      },
-      policeEnabled: {
-        name: 'Show public security filing',
-        help: 'Display public security filing info in the footer',
-      },
-      policeNumber: {
-        name: 'Public security filing number',
-        help: 'Public security filing number (e.g. 京公网安备 11010502000000号)',
-      },
-      policeUrl: {
-        name: 'Public security filing link',
-        help: 'Target URL when clicking the public security filing number; leave blank for no link',
       },
       backgroundEnabled: {
         name: 'Enable custom background',
