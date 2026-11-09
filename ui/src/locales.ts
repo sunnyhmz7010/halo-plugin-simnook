@@ -1,7 +1,7 @@
 import { useI18n } from 'vue-i18n'
 
 const en = {
- '续费待办': 'Renewal tasks', '备份恢复': 'Backup and restore', '全部': 'All', '状态': 'Status', '使用中': 'Active', '已过期': 'Expired',
+ '续费提醒': 'Renewal reminders', '备份恢复': 'Backup and restore', '全部': 'All', '状态': 'Status', '使用中': 'Active', '已过期': 'Expired',
  '搜索名称、号码或运营商': 'Search name, number or carrier', '续费紧急度': 'Renewal urgency', '清除筛选': 'Clear filters',
  '续费窗口开放': 'Renewal window open', '已逾期': 'Overdue', '未来 3 天内': 'Within 3 days', '未来 7 天内': 'Within 7 days',
  '未来 15 天内': 'Within 15 days', '未来 30 天内': 'Within 30 days', '未来 60 天内': 'Within 60 days', '超过 60 天': 'More than 60 days', '无续费日期': 'No renewal date',
@@ -11,7 +11,11 @@ const en = {
  '续费日期更新提示': 'Saving updates the legacy expiry override and replaces the old renewal window with the dates shown above.',
  '自动续费提醒': 'Automatic renewal reminders', '提醒范围': 'Due within {days} days, overdue cards and open windows',
  '取消我的订阅': 'Unsubscribe me', '订阅我的续费提醒': 'Subscribe me', '提醒状态加载失败': 'Could not load reminder status', '提醒设置保存失败': 'Could not save reminder preferences',
- '提醒配置说明': 'Adjust time, timezone and range in plugin settings. Delivery follows your Halo notification settings; no tasks means no notification.',
+ '提醒配置说明': 'Managers opt in individually. Delivery follows your Halo notification settings; no tasks means no notification.',
+ '每日汇总时间': 'Daily digest time', '业务时区': 'Business timezone', '提前提醒天数': 'Days ahead', '保存设置': 'Save settings',
+ '每日汇总时间说明': 'Use HH:mm. Managers opt in individually; delivery follows Halo notification settings.',
+ '业务时区说明': 'Use an IANA timezone, e.g. Asia/Shanghai. Card status and reminders use the same timezone.',
+ '提前提醒天数说明': 'Include cards due within this range, overdue cards and open renewal windows.',
  '上次提交给 Halo': 'Last submitted to Halo', '下次检查时间': 'Next scheduled check',
  '导出备份': 'Export backup', '备份范围说明': 'Includes full numbers, private card details and expenses. JSON supports restore; CSV is for viewing.',
  '完整 JSON 备份': 'Full JSON backup', '号卡清单 CSV': 'Cards CSV', '消费记录 CSV': 'Expenses CSV',
@@ -63,7 +67,10 @@ const en = {
 const zh = {
  ...Object.fromEntries(Object.keys(en).map(key => [key, key])),
  '提醒范围': '未来 {days} 天、已逾期及窗口开放的号卡',
- '提醒配置说明': '时间、时区与提醒范围在插件设置中调整。通知渠道沿用个人 Halo 设置，无待办时不发送。',
+ '提醒配置说明': '管理员需要各自订阅。通知渠道沿用个人 Halo 设置，无待办时不发送。',
+ '每日汇总时间说明': '使用 HH:mm。管理员需要各自订阅，邮件等渠道沿用 Halo 通知设置。',
+ '业务时区说明': '使用 IANA 时区，如 Asia/Shanghai。号卡状态与提醒按同一时区计算。',
+ '提前提醒天数说明': '汇总此范围内的号卡，同时包含已逾期和已开放续费窗口的号卡。',
  '备份范围说明': '包含完整号码、私有号卡信息和消费记录。JSON 可用于恢复，CSV 用于查阅。',
  '恢复范围说明': '支持本插件 JSON 备份，最大 32 MiB。同 ID 数据默认跳过；追加仅合并缺失消费记录，保留现有号卡信息。',
  '恢复确认说明': '将处理 {count} 项已选资源，覆盖会替换业务字段。写入遇到失败将停止，已完成的写入会保留。',

@@ -17,7 +17,7 @@ const { t, locale, label, recordTypeLabel } = useSimnookI18n()
 const api = new SimCardV1alpha1Api(undefined, '', axiosInstance)
 const managementApi = new SimnookManagementV1alpha1Api(undefined, '', axiosInstance)
 const tab = ref('cards')
-const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'todo', label: t('续费待办') }, { id: 'backup', label: t('备份恢复') }])
+const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'todo', label: t('续费提醒') }, { id: 'backup', label: t('备份恢复') }])
 const cards = ref<ManagedCardView[]>([])
 const page = ref(1), size = ref(10)
 const keyword = ref(''), countryFilter = ref(''), statusFilter = ref(''), urgencyFilter = ref('')
@@ -234,7 +234,7 @@ function openFrontend() { window.open('/simnook/', '_blank', 'noopener,noreferre
  <VTabbar v-model:active-id="tab" :items="tabs" class="mb-4 w-full" type="outline" />
  <BackupView v-if="tab === 'backup'" @restored="load" />
  <template v-else>
- <ReminderPanel v-if="tab === 'todo'" />
+ <ReminderPanel v-if="tab === 'todo'" @saved="load" />
  <VCard :body-class="['!p-0']">
   <template #header>
    <div class="flex flex-wrap items-end gap-3">
