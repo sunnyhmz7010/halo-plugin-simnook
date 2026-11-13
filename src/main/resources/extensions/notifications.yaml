@@ -1,11 +1,14 @@
 apiVersion: notification.halo.run/v1alpha1
 kind: ReasonType
 metadata:
-  name: simnook-renewal-reminder
+  name: simnook-channel-reminder
 spec:
   displayName: SIMnook 续费提醒 / Renewal reminders
-  description: 已订阅管理员的每日续费待办汇总 / Daily renewal digest for subscribed managers
+  description: Halo 渠道的每日续费待办汇总 / Daily renewal digest via Halo channels
   properties:
+    - name: channel
+      type: string
+      optional: false
     - name: recipient
       type: string
       optional: false
@@ -22,10 +25,10 @@ spec:
 apiVersion: notification.halo.run/v1alpha1
 kind: NotificationTemplate
 metadata:
-  name: simnook-renewal-reminder-default
+  name: simnook-channel-reminder-default
 spec:
   reasonSelector:
-    reasonType: simnook-renewal-reminder
+    reasonType: simnook-channel-reminder
     language: default
   template:
     title: "SIMnook 续费待办 · [(${businessDate})]"
@@ -39,10 +42,10 @@ spec:
 apiVersion: notification.halo.run/v1alpha1
 kind: NotificationTemplate
 metadata:
-  name: simnook-renewal-reminder-en
+  name: simnook-channel-reminder-en
 spec:
   reasonSelector:
-    reasonType: simnook-renewal-reminder
+    reasonType: simnook-channel-reminder
     language: en
   template:
     title: "SIMnook renewal digest · [(${businessDate})]"

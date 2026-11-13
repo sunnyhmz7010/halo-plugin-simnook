@@ -2,12 +2,11 @@
 import { useSimnookI18n } from '../locales'
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { axiosInstance } from '@halo-dev/api-client'
-import { Dialog, Toast, VPageHeader, VCard, VButton, VEntityContainer, VEntity, VEntityField, VPagination, VLoading, VEmpty, VModal, VTabbar } from '@halo-dev/components'
+import { Dialog, Toast, VAlert, VAvatar, VPageHeader, VCard, VButton, VDropdownDivider, VDropdownItem, VEntityContainer, VEntity, VEntityField, VPagination, VLoading, VEmpty, VModal, VSpace, VTabbar } from '@halo-dev/components'
 import { SimCardV1alpha1Api, SimnookManagementV1alpha1Api, type SimCard, type CardSpec, type ManagedCardView } from '../api/generated'
 import ExpenseFields from './ExpenseFields.vue'
 import QuickRenewal from './QuickRenewal.vue'
 import ReminderPanel from './ReminderPanel.vue'
-import BackupView from './BackupView.vue'
 import { filterCardViews, URGENCY_CODES } from '../utils/cardManagement'
 import { BUILTIN_CARRIERS, builtinLogoOptions, carrierLogo } from '../../../frontend/shared/carriers'
 import { CYCLE_OPTIONS, cardName, copyCardConfiguration, cycleChoice, entryExpiry, localDay } from '../utils/cardEntry'
@@ -17,17 +16,18 @@ const { t, locale, label, recordTypeLabel } = useSimnookI18n()
 const api = new SimCardV1alpha1Api(undefined, '', axiosInstance)
 const managementApi = new SimnookManagementV1alpha1Api(undefined, '', axiosInstance)
 const tab = ref('cards')
-const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'todo', label: t('续费提醒') }, { id: 'backup', label: t('备份恢复') }])
+const tabs = computed(() => [{ id: 'cards', label: t('号卡') }, { id: 'todo', label: t('续费提醒') }])
 const cards = ref<ManagedCardView[]>([])
 const page = ref(1), size = ref(10)
-const keyword = ref(''), countryFilter = ref(''), statusFilter = ref(''), urgencyFilter = ref('')
+const keyword = ref('')
+const countryFilter = ref<string>(), statusFilter = ref<string>(), urgencyFilter = ref<string>()
 const renewing = ref<ManagedCardView>()
 const urgencyLabels: Record<string, string> = { window: '续费窗口开放', overdue: '已逾期', days3: '未来 3 天内', days7: '未来 7 天内', days15: '未来 15 天内', days30: '未来 30 天内', days60: '未来 60 天内', beyond: '超过 60 天', noDate: '无续费日期', cancelled: '已注销' }
-const filteredCards = computed(() => filterCardViews(cards.value, { keyword: keyword.value, country: countryFilter.value, status: statusFilter.value, urgency: urgencyFilter.value, todo: tab.value === 'todo' }))
+const filteredCards = computed(() => filterCardViews(cards.value, { keyword: keyword.value, country: countryFilter.value ?? '', status: statusFilter.value ?? '', urgency: urgencyFilter.value ?? '', todo: tab.value === 'todo' }))
 const total = computed(() => filteredCards.value.length)
 const pagedCards = computed(() => filteredCards.value.slice((page.value - 1) * size.value, page.value * size.value))
 const countryOptions = computed(() => [...new Set(cards.value.map(card => card.countryName).filter((value): value is string => Boolean(value)))].sort().map(value => ({ value, label: value })))
-function clearFilters() { keyword.value = ''; countryFilter.value = ''; statusFilter.value = ''; urgencyFilter.value = '' }
+function clearFilters() { keyword.value = ''; countryFilter.value = undefined; statusFilter.value = undefined; urgencyFilter.value = undefined }
 const loading = ref(false), saving = ref(false), visible = ref(false), conflict = ref(false), loadError = ref(false)
 const deleting = ref('')
 const editing = ref<SimCard>()
@@ -231,44 +231,47 @@ function openFrontend() { window.open('/simnook/', '_blank', 'noopener,noreferre
   </template>
  </VPageHeader>
  <div class="m-0 md:m-4">
- <VTabbar v-model:active-id="tab" :items="tabs" class="mb-4 w-full" type="outline" />
- <BackupView v-if="tab === 'backup'" @restored="load" />
- <template v-else>
- <ReminderPanel v-if="tab === 'todo'" @saved="load" />
  <VCard :body-class="['!p-0']">
-  <template #header>
-   <div class="flex flex-wrap items-end gap-3">
-    <SearchInput v-model="keyword" :placeholder="t('搜索名称、号码或运营商')" />
-    <FormKit v-model="countryFilter" type="select" :label="t('号码国家')" :options="[{ value: '', label: t('全部') }, ...countryOptions]" />
-    <FormKit v-model="statusFilter" type="select" :label="t('状态')" :options="[{ value: '', label: t('全部') }, { value: 'active', label: t('使用中') }, { value: 'expired', label: t('已过期') }, { value: 'cancelled', label: t('已注销') }]" />
-    <FormKit v-model="urgencyFilter" type="select" :label="t('续费紧急度')" :options="[{ value: '', label: t('全部') }, ...URGENCY_CODES.map(value => ({ value, label: t(urgencyLabels[value]!) }))]" />
-    <VButton v-if="keyword || countryFilter || statusFilter || urgencyFilter" size="sm" @click="clearFilters">{{ t('清除筛选') }}</VButton>
-   </div>
-  </template>
+  <template #header><VTabbar v-model:active-id="tab" :items="tabs" class="w-full" type="outline" /></template>
+ <template v-if="tab === 'cards' || tab === 'todo'">
+ <ReminderPanel v-if="tab === 'todo'" @saved="load" />
+  <VSpace spacing="md" class="w-full flex-wrap p-4">
+   <SearchInput v-model="keyword" :placeholder="t('搜索名称、号码或运营商')" />
+   <FilterDropdown v-model="countryFilter" :label="t('号码国家')" :items="[{ label: t('全部') }, ...countryOptions]" />
+   <FilterDropdown v-model="statusFilter" :label="t('状态')" :items="[{ label: t('全部') }, { value: 'active', label: t('使用中') }, { value: 'expired', label: t('已过期') }, { value: 'cancelled', label: t('已注销') }]" />
+   <FilterDropdown v-model="urgencyFilter" :label="t('续费紧急度')" :items="[{ label: t('全部') }, ...URGENCY_CODES.map(value => ({ value, label: t(urgencyLabels[value]!) }))]" />
+   <VButton v-if="keyword || countryFilter || statusFilter || urgencyFilter" size="sm" ghost @click="clearFilters">{{ t('清除筛选') }}</VButton>
+  </VSpace>
   <VLoading v-if="loading" />
   <VEmpty v-else-if="loadError" :title="t('加载失败')" :message="t('请检查权限或网络后重试')"><template #actions><VButton @click="load">{{ t('重试') }}</VButton></template></VEmpty>
   <VEmpty v-else-if="!filteredCards.length" :title="t(cards.length ? '没有匹配的号卡' : '还没有号卡')" :message="t(cards.length ? '调整筛选条件查看其他号卡。' : '首次安装为空库，点击新增号卡开始录入。')" />
   <VEntityContainer v-else><VEntity v-for="card in pagedCards" :key="card.id">
-   <template #start><VEntityField :title="card.name" :description="[card.carrier?.trim(), card.number?.trim() || t('未填写号码')].filter(Boolean).join(' · ')" @click="openCard(card)" /></template>
-   <template #end>
-    <VEntityField :title="[card.statusLabel, card.urgency].filter(Boolean).join(' · ')" :description="t('消费记录数量', card.history?.length || 0)" />
-    <VButton v-if="card.status !== 'cancelled'" size="sm" @click="renewing = card">{{ t('快捷续费') }}</VButton>
-    <VButton size="sm" :loading="checking === card.id" @click="inspect(card)">{{ t('数据检查') }}</VButton>
-    <VButton size="sm" @click="openCard(card, true)">{{ t('再添同款') }}</VButton>
-    <VButton size="sm" @click="openCard(card)">{{ t('编辑') }}</VButton>
-    <VButton size="sm" type="danger" :loading="deleting === card.id" @click="remove(card)">{{ t('删除') }}</VButton>
+   <template #start>
+    <VSpace direction="column" align="start">
+     <VEntityField :title="card.name" :max-width="200" :description="[card.carrier?.trim(), card.number?.trim() || t('未填写号码')].filter(Boolean).join(' · ')" @click="openCard(card)" />
+     <VEntityField :title="[card.statusLabel, card.urgency].filter(Boolean).join(' · ')" :description="t('消费记录数量', card.history?.length || 0)" :max-width="200" />
+    </VSpace>
+   </template>
+   <template #dropdownItems>
+    <VDropdownItem @click="openCard(card)">{{ t('编辑') }}</VDropdownItem>
+    <VDropdownItem v-if="card.status !== 'cancelled'" @click="renewing = card">{{ t('快捷续费') }}</VDropdownItem>
+    <VDropdownItem :disabled="Boolean(checking)" @click="inspect(card)">{{ t('数据检查') }}</VDropdownItem>
+    <VDropdownItem @click="openCard(card, true)">{{ t('再添同款') }}</VDropdownItem>
+    <VDropdownDivider />
+    <VDropdownItem type="danger" :disabled="deleting === card.id" @click="remove(card)">{{ t('删除') }}</VDropdownItem>
    </template>
   </VEntity></VEntityContainer>
+ </template>
   <template #footer><VPagination v-model:page="page" v-model:size="size" :total="total" :size-options="[10, 20, 50]" :page-label="t('页')" :size-label="t('条 / 页')" :total-label="t('分页总数', { count: total })" /></template>
- </VCard></template></div>
+ </VCard></div>
  <QuickRenewal v-if="renewing?.id" :name="renewing.id" :today="renewing.asOfDate || localDay()" @close="renewing = undefined" @saved="renewing = undefined; load()" />
- <VModal v-if="visible" :title="editing ? t('编辑号卡') : t('新增号卡')" :width="760" mount-to-body @close="visible = false">
-  <div v-if="conflict" class="mb-4"><p>{{ t('编辑冲突提示') }}</p><VButton @click="reloadEditing">{{ t('重新加载') }}</VButton></div>
+ <VModal v-if="visible" :title="editing ? t('编辑号卡') : t('新增号卡')" :width="760" mount-to-body :layer-closable="false" @close="!saving && (visible = false)">
+  <VAlert v-if="conflict" type="warning" class="mb-4" :description="t('编辑冲突提示')"><template #actions><VButton size="sm" @click="reloadEditing">{{ t('重新加载') }}</VButton></template></VAlert>
   <VTabbar v-model:active-id="formTab" :items="formTabs" class="mb-4" type="outline" />
   <FormKit id="simnook-form" v-model="form" type="form" :actions="false" :config="{ validationVisibility: 'submit' }" @submit="save" @submit-invalid="showInvalidTab">
    <div v-show="formTab === 'basic'">
     <FormKit name="carrier" type="select" :label="t('运营商')" :placeholder="t('选择或输入运营商')" :options="withExisting(BUILTIN_CARRIERS.map(item => item.name), form.carrier)" searchable allow-create clearable />
-    <div v-if="logoPreview" class="mb-4 flex items-center gap-3"><img :src="logoPreview" :alt="t('运营商图标预览')" class="h-10 w-10 rounded bg-white object-contain" /><span class="text-sm text-gray-500">{{ t('已匹配运营商图标，可在更多设置中更换。') }}</span></div>
+    <VSpace v-if="logoPreview" spacing="md" class="mb-4"><VAvatar :src="logoPreview" :alt="t('运营商图标预览')" size="md" /><span class="text-sm text-gray-500">{{ t('已匹配运营商图标，可在更多设置中更换。') }}</span></VSpace>
     <FormKit name="number" type="text" :label="t('完整号码（私有）')" :help="t('填写国际格式，如 +85255550123。')" />
     <FormKit name="countryName" type="select" :label="t('号码国家')" :placeholder="t('选择号码国家')" :options="withExisting(countries, form.countryName)" searchable allow-create clearable :help="t('自定义地区请用「国旗 emoji + 空格 + 名称」，用于地图定位。')" />
     <FormKit name="typeKind" type="select" :label="t('卡片类型')" :placeholder="t('选择卡片类型')" :options="typeOptions" clearable />

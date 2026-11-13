@@ -5,6 +5,10 @@ metadata:
   name: simnook-settings
 spec:
   forms:
+    - group: backup
+      label: 备份恢复
+      formSchema:
+        - $cmp: simnook-backup
     - group: general
       label: 展示
       formSchema:

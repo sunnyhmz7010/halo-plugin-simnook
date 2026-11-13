@@ -2,9 +2,10 @@ import { definePlugin } from '@halo-dev/ui-shared'
 import IconSimCard from '~icons/ri/sim-card-2-line'
 import { markRaw } from 'vue'
 import SettingField from './views/SettingField.vue'
+import BackupView from './views/BackupView.vue'
 
 export default definePlugin({
-  components: { 'simnook-setting-field': markRaw(SettingField) },
+  components: { 'simnook-setting-field': markRaw(SettingField), 'simnook-backup': markRaw(BackupView) },
   routes: [{
     parentName: 'ToolsRoot',
     route: {

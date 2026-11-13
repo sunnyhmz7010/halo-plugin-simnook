@@ -34,30 +34,69 @@ public class ReminderEndpoint implements CustomEndpoint {
     public RouterFunction<ServerResponse> endpoint() {
         return SpringdocRouteBuilder.route()
                 .GET(
-                        "reminders/subscription",
+                        "reminderchannels",
                         request -> username(request)
-                                .flatMap(reminders::view)
+                                .then(reminders.view())
                                 .flatMap(value -> ServerResponse.ok()
                                         .cacheControl(CacheControl.noStore())
                                         .bodyValue(value)),
-                        builder -> builder.operationId("getReminderSubscription")
-                                .tag("SimnookManagementV1alpha1")
-                                .response(responseBuilder().implementation(ReminderService.SubscriptionView.class)))
+                        builder -> builder.operationId("listReminderChannels")
+                                .tag("ReminderChannels")
+                                .response(responseBuilder().implementation(ReminderService.ChannelsView.class)))
                 .PUT(
-                        "reminders/subscription",
+                        "reminderchannels",
                         request -> username(request)
-                                .zipWith(request.bodyToMono(ReminderService.SubscriptionUpdate.class))
-                                .flatMap(pair -> reminders.subscribe(
-                                        pair.getT1(), pair.getT2().subscribed()))
+                                .then(request.bodyToMono(ReminderService.ChannelInput.class))
+                                .flatMap(reminders::save)
                                 .flatMap(value -> ServerResponse.ok()
                                         .cacheControl(CacheControl.noStore())
                                         .bodyValue(value)),
-                        builder -> builder.operationId("updateReminderSubscription")
-                                .tag("SimnookManagementV1alpha1")
-                                .requestBody(
-                                        requestBodyBuilder().implementation(ReminderService.SubscriptionUpdate.class))
-                                .response(responseBuilder().implementation(ReminderService.SubscriptionView.class)))
+                        builder -> builder.operationId("saveReminderChannel")
+                                .tag("ReminderChannels")
+                                .requestBody(requestBodyBuilder().implementation(ReminderService.ChannelInput.class))
+                                .response(responseBuilder().implementation(ReminderService.ChannelView.class)))
+                .DELETE(
+                        "reminderchannels/{name}",
+                        request -> username(request)
+                                .then(Mono.defer(
+                                        () -> reminders.delete(request.pathVariable("name"), version(request))))
+                                .then(ServerResponse.noContent().build()),
+                        builder -> builder.operationId("deleteReminderChannel")
+                                .tag("ReminderChannels")
+                                .parameter(org.springdoc.core.fn.builders.parameter.Builder.parameterBuilder()
+                                        .name("name")
+                                        .in(io.swagger.v3.oas.annotations.enums.ParameterIn.PATH)
+                                        .required(true)
+                                        .implementation(String.class))
+                                .parameter(org.springdoc.core.fn.builders.parameter.Builder.parameterBuilder()
+                                        .name("version")
+                                        .in(io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY)
+                                        .required(true)
+                                        .implementation(Long.class)))
+                .POST(
+                        "reminderchannels/{name}/test",
+                        request -> username(request)
+                                .then(reminders.test(request.pathVariable("name")))
+                                .flatMap(value -> ServerResponse.ok()
+                                        .cacheControl(CacheControl.noStore())
+                                        .bodyValue(value)),
+                        builder -> builder.operationId("testReminderChannel")
+                                .tag("ReminderChannels")
+                                .parameter(org.springdoc.core.fn.builders.parameter.Builder.parameterBuilder()
+                                        .name("name")
+                                        .in(io.swagger.v3.oas.annotations.enums.ParameterIn.PATH)
+                                        .required(true)
+                                        .implementation(String.class))
+                                .response(responseBuilder().implementation(ReminderService.ChannelView.class)))
                 .build();
+    }
+
+    private static Long version(ServerRequest request) {
+        try {
+            return Long.valueOf(request.queryParam("version").orElse(""));
+        } catch (NumberFormatException error) {
+            throw BackupService.bad("缺少有效渠道版本");
+        }
     }
 
     private Mono<String> username(ServerRequest request) {

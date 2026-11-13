@@ -1,0 +1,15 @@
+.gitignore
+.npmignore
+.openapi-generator-ignore
+api.ts
+api/reminder-channels-api.ts
+base.ts
+common.ts
+configuration.ts
+git_push.sh
+index.ts
+models/index.ts
+models/reminder-channel-input.ts
+models/reminder-channel-view.ts
+models/reminder-channels-view.ts
+models/reminder-recipient.ts

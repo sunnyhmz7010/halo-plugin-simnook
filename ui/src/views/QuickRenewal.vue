@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { axiosInstance } from '@halo-dev/api-client'
-import { Toast, VButton, VEmpty, VLoading, VModal } from '@halo-dev/components'
+import { Toast, VAlert, VButton, VDescription, VDescriptionItem, VEmpty, VEntityField, VLoading, VModal } from '@halo-dev/components'
 import { SimCardV1alpha1Api, SimnookManagementV1alpha1Api, type SimCard, type ExpenseRecord } from '../api/generated'
 import { useSimnookI18n } from '../locales'
 import { newExpense, suggestedExtension } from '../utils/cardEntry'
@@ -54,24 +54,22 @@ function submit() { (document.getElementById('simnook-quick-renewal') as HTMLFor
 </script>
 
 <template>
- <VModal :title="t('快捷续费')" :width="640" mount-to-body :closable="!saving" @close="!saving && emit('close')">
+ <VModal :title="t('快捷续费')" :width="640" mount-to-body :layer-closable="false" @close="!saving && emit('close')">
   <VLoading v-if="loading" />
   <VEmpty v-else-if="failed" :title="t('加载失败')"><template #actions><VButton @click="load">{{ t('重试') }}</VButton></template></VEmpty>
   <template v-else-if="card && draft">
-   <p class="mb-3 font-medium">{{ card.spec.name }}</p>
-   <div v-if="conflict" class="mb-4 rounded border border-orange-200 bg-orange-50 p-3 text-sm">
-    <p>{{ t('续费冲突提示') }}</p><VButton class="mt-2" @click="load">{{ t('重新加载并保留草稿') }}</VButton>
-   </div>
+   <VEntityField :title="card.spec.name" class="mb-3" />
+   <VAlert v-if="conflict" type="warning" class="mb-4" :description="t('续费冲突提示')"><template #actions><VButton size="sm" @click="load">{{ t('重新加载并保留草稿') }}</VButton></template></VAlert>
    <FormKit id="simnook-quick-renewal" v-model="draft" type="form" :actions="false" @submit="save">
     <ExpenseFields :record="draft" :initialize="false" required :card="card.spec"
      :types="[{ value: '续费/保号', label: t('续费/保号') }]" :currencies="[...new Set(['CNY', 'USD', 'HKD', 'EUR', 'GBP', 'JPY', draft.currency || 'CNY'])].map(value => ({ value, label: value }))" />
     <FormKit v-model="nextStart" type="date" :ignore="true" :label="t('下次续费起始日')" :help="t('留空时跟随有效期。')" />
     <FormKit v-model="nextEnd" type="date" :ignore="true" :label="t('续费截止日')" />
-    <div class="rounded bg-gray-50 p-3 text-sm text-gray-700">
-     <p>{{ t('新有效期') }}：{{ draft.extendsTo || '—' }}</p>
-     <p>{{ t('下次续费') }}：{{ nextStart || draft.extendsTo || '—' }} {{ nextEnd ? `~ ${nextEnd}` : '' }}</p>
-     <p v-if="card.spec.expiresAt || card.spec.nextRenewalAt || card.spec.nextRenewalEnd" class="mt-2">{{ t('续费日期更新提示') }}</p>
-    </div>
+    <VDescription>
+     <VDescriptionItem :label="t('新有效期')" :content="draft.extendsTo || '—'" />
+     <VDescriptionItem :label="t('下次续费')" :content="[nextStart || draft.extendsTo || '—', nextEnd].filter(Boolean).join(' ~ ')" />
+    </VDescription>
+    <VAlert v-if="card.spec.expiresAt || card.spec.nextRenewalAt || card.spec.nextRenewalEnd" type="info" class="mt-3" :description="t('续费日期更新提示')" />
    </FormKit>
   </template>
   <template #footer><VButton type="secondary" :loading="saving" :disabled="conflict || loading || failed" @click="submit">{{ t('保存续费') }}</VButton></template>

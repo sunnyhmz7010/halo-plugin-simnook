@@ -31,7 +31,7 @@ public class SimnookPlugin extends BasePlugin {
 
     @Override
     public void start() {
-        schemes.register(RenewalReminder.class);
+        schemes.register(ReminderChannel.class);
         // Halo 先标记删除，再异步回收。列表在分页前排除已标记的卡。
         schemes.register(
                 SimCard.class,
@@ -42,7 +42,7 @@ public class SimnookPlugin extends BasePlugin {
 
     @Override
     public void stop() {
-        schemes.unregister(Scheme.buildFromType(RenewalReminder.class));
+        schemes.unregister(Scheme.buildFromType(ReminderChannel.class));
         schemes.unregister(Scheme.buildFromType(SimCard.class));
     }
 }

@@ -116,6 +116,25 @@ haloPlugin {
 }
 
 // Windows 绝对路径必须使用 URI，否则 OpenAPI 解析器会把盘符当作协议。
+tasks.register('exportReminderOpenApi', JavaExec) {
+    dependsOn 'compileTestJava'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'run.halo.simnook.ReminderOpenApi'
+    args layout.buildDirectory.file('openapi/reminders.json').get().asFile.absolutePath
+}
+
+tasks.register('generateReminderApiClient') {
+    dependsOn 'exportReminderOpenApi'
+    doLast {
+        def config = new org.openapitools.codegen.config.CodegenConfigurator()
+        config.setInputSpec(layout.buildDirectory.file('openapi/reminders.json').get().asFile.toURI().toString())
+        config.setOutputDir(file('ui/src/api/reminders').absolutePath)
+        config.setGeneratorName('typescript-axios')
+        config.setAdditionalProperties([withSeparateModelsAndApi: true, apiPackage: 'api', modelPackage: 'models', useSingleRequestParameter: true])
+        new org.openapitools.codegen.DefaultGenerator().opts(config.toClientOptInput()).generate()
+    }
+}
+
 tasks.matching { it.name == 'generateApiClient' }.configureEach {
     if (System.getProperty('os.name').toLowerCase().contains('windows')) {
         actions.clear()
